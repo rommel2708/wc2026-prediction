@@ -6,6 +6,17 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 import io
+import base64
+import os
+
+
+@st.cache_data
+def _logo_b64() -> str:
+    path = os.path.join(os.path.dirname(__file__), "assets", "wc2026_logo.webp")
+    if not os.path.exists(path):
+        return ""
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
 
 st.set_page_config(
     page_title="WC 2026 · My Prediction",
@@ -418,11 +429,17 @@ def group_card_html(grp):
 
 
 # ── Header ────────────────────────────────────────────────────────────────────
+_logo = _logo_b64()
+_logo_tag = (
+    f'<img src="data:image/webp;base64,{_logo}" '
+    f'style="height:90px;width:auto;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));">'
+    if _logo else '<div style="font-size:52px;line-height:1;">🏆</div>'
+)
 st.markdown(
     '<div style="background:linear-gradient(135deg,#0A1628 0%,#162032 100%);'
     'border-radius:16px;padding:20px 28px;margin-bottom:18px;'
     'border:2px solid #D4A017;display:flex;align-items:center;gap:18px;">'
-    '<div style="font-size:52px;line-height:1;">🏆</div>'
+    f'{_logo_tag}'
     '<div>'
     '<div style="font-size:22px;font-weight:900;color:#FFD700;letter-spacing:2px;">'
     'FIFA WORLD CUP 2026</div>'
