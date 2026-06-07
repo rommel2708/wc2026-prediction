@@ -17,9 +17,9 @@ st.set_page_config(
 # ── Global CSS ────────────────────────────────────────────────────────────────
 st.markdown("""<style>
 /* === BACKGROUND === */
-.stApp { background: #1DE9B6 !important; }
-header[data-testid="stHeader"] { background: #1DE9B6 !important; box-shadow: none !important; }
-section[data-testid="stSidebar"] { background: #0A1628 !important; }
+.stApp { background: #0A1628 !important; }
+header[data-testid="stHeader"] { background: #0A1628 !important; box-shadow: none !important; }
+section[data-testid="stSidebar"] { background: #050d1a !important; }
 
 /* === BLOCK CONTAINER === */
 .main .block-container {
@@ -30,85 +30,112 @@ section[data-testid="stSidebar"] { background: #0A1628 !important; }
 
 /* === TABS === */
 .stTabs [data-baseweb="tab-list"] {
-    background: #0A1628;
+    background: #162032;
     padding: 5px 6px;
     border-radius: 12px;
     gap: 4px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
 .stTabs [data-baseweb="tab"] {
     border-radius: 8px;
-    color: #8b949e;
+    color: white !important;
     padding: 8px 22px;
     font-weight: 600;
 }
 .stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg,#D4A017,#FFD700) !important;
+    background: linear-gradient(135deg,#1DE9B6,#00BFA5) !important;
     color: #0A1628 !important;
     font-weight: 800;
 }
 
 /* === EXPANDERS === */
 [data-testid="stExpander"] {
-    background: rgba(255,255,255,0.90) !important;
+    background: rgba(22,32,50,0.95) !important;
     border-radius: 14px !important;
-    border: 2px solid rgba(212,160,23,0.45) !important;
+    border: 2px solid rgba(29,233,182,0.3) !important;
     margin-bottom: 12px;
 }
 [data-testid="stExpander"] details summary p {
-    color: #0A1628 !important;
+    color: #F0F6FC !important;
     font-weight: 700 !important;
 }
-[data-testid="stExpander"] details summary svg { fill: #0A1628 !important; }
+[data-testid="stExpander"] details summary svg { fill: #1DE9B6 !important; }
 
 /* === TYPOGRAPHY === */
-h1 { font-size:2.2rem !important; color:#0A1628 !important; font-weight:900 !important; }
-h2 { font-size:1.3rem !important; color:#0A1628 !important; font-weight:700 !important; }
-h3 { font-size:1.1rem !important; color:#0A1628 !important; font-weight:600 !important; }
-p, .stMarkdown p { color: #0A1628 !important; }
-label, .stSelectbox label { color: #0A1628 !important; font-weight: 600 !important; }
-.stCaption p { color: rgba(10,22,40,0.6) !important; font-size: 0.82rem !important; }
+h1 { font-size:2.2rem !important; color:#1DE9B6 !important; font-weight:900 !important; }
+h2 { font-size:1.3rem !important; color:#1DE9B6 !important; font-weight:700 !important; }
+h3 { font-size:1.1rem !important; color:#1DE9B6 !important; font-weight:600 !important; }
+p, .stMarkdown p { color: #F0F6FC !important; }
+label, .stSelectbox label { color: #F0F6FC !important; font-weight: 600 !important; }
+.stCaption p { color: rgba(240,246,252,0.55) !important; font-size: 0.82rem !important; }
 
 /* === SELECTBOXES === */
 [data-baseweb="select"] > div:first-child {
-    background: white !important;
-    border: 1.5px solid rgba(212,160,23,0.35) !important;
+    background: #162032 !important;
+    border: 1.5px solid rgba(29,233,182,0.3) !important;
     border-radius: 8px !important;
 }
-[data-baseweb="select"] span { color: #0A1628 !important; font-weight: 500; }
+[data-baseweb="select"] span { color: #F0F6FC !important; font-weight: 500; }
 
 /* === MULTISELECT === */
 [data-baseweb="tag"] {
-    background: #0A1628 !important;
+    background: #1DE9B6 !important;
     border-radius: 6px !important;
 }
-[data-baseweb="tag"] span { color: #FFD700 !important; }
+[data-baseweb="tag"] span { color: #0A1628 !important; }
 
 /* === METRICS === */
 [data-testid="metric-container"] {
-    background: rgba(255,255,255,0.88);
+    background: rgba(22,32,50,0.95);
     border-radius: 12px;
     padding: 14px 16px;
-    border-left: 4px solid #D4A017;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    border-left: 4px solid #1DE9B6;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
 }
-[data-testid="metric-container"] label { color: rgba(10,22,40,0.6) !important; font-weight:600 !important; }
+[data-testid="metric-container"] label { color: rgba(240,246,252,0.6) !important; font-weight:600 !important; }
 [data-testid="metric-container"] [data-testid="stMetricValue"] {
-    color: #0A1628 !important; font-weight: 900 !important;
+    color: #F0F6FC !important; font-weight: 900 !important;
 }
 
 /* === BUTTONS === */
 .stButton > button {
-    background: #0A1628 !important;
-    color: #FFD700 !important;
+    background: #1DE9B6 !important;
+    color: #0A1628 !important;
     font-weight: 800 !important;
-    border: 2px solid #D4A017 !important;
+    border: none !important;
     border-radius: 10px !important;
     letter-spacing: 0.5px;
 }
 .stButton > button:hover {
     background: linear-gradient(135deg,#D4A017,#FFD700) !important;
     color: #0A1628 !important;
+}
+/* Thirds grid - secondary (unselected) */
+.stButton > button[kind="secondary"] {
+    background: #162032 !important;
+    color: #F0F6FC !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(29,233,182,0.25) !important;
+    min-height: 78px !important;
+    white-space: pre-wrap !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+}
+.stButton > button[kind="secondary"]:hover {
+    background: rgba(29,233,182,0.12) !important;
+    border-color: rgba(29,233,182,0.6) !important;
+    color: #1DE9B6 !important;
+}
+/* Thirds grid - primary (selected) */
+.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg,#1DE9B6,#00BFA5) !important;
+    color: #0A1628 !important;
+    font-weight: 800 !important;
+    border: 2px solid #FFD700 !important;
+    min-height: 78px !important;
+    white-space: pre-wrap !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
 }
 [data-testid="stDownloadButton"] > button {
     background: linear-gradient(135deg,#D4A017,#FFD700) !important;
@@ -119,7 +146,7 @@ label, .stSelectbox label { color: #0A1628 !important; font-weight: 600 !importa
 }
 
 /* === DIVIDER === */
-hr { border-color: rgba(10,22,40,0.18) !important; border-width: 1.5px !important; }
+hr { border-color: rgba(29,233,182,0.2) !important; border-width: 1.5px !important; }
 
 /* === ALERTS === */
 [data-baseweb="notification"] { border-radius: 10px !important; }
@@ -144,8 +171,33 @@ FLAGS = {
 }
 
 
+FLAG_CODES = {
+    'Messico': 'mx', 'Sudafrica': 'za', 'Corea del Sud': 'kr', 'Rep. Ceca': 'cz',
+    'Canada': 'ca', 'Bosnia': 'ba', 'Qatar': 'qa', 'Svizzera': 'ch',
+    'Brasile': 'br', 'Marocco': 'ma', 'Haiti': 'ht', 'Scozia': 'gb-sct',
+    'USA': 'us', 'Paraguay': 'py', 'Australia': 'au', 'Turchia': 'tr',
+    'Germania': 'de', 'Curaçao': 'cw', "Costa d'Avorio": 'ci', 'Ecuador': 'ec',
+    'Olanda': 'nl', 'Giappone': 'jp', 'Svezia': 'se', 'Tunisia': 'tn',
+    'Belgio': 'be', 'Egitto': 'eg', 'Iran': 'ir', 'Nuova Zelanda': 'nz',
+    'Spagna': 'es', 'Capo Verde': 'cv', 'Arabia Saudita': 'sa', 'Uruguay': 'uy',
+    'Francia': 'fr', 'Senegal': 'sn', 'Iraq': 'iq', 'Norvegia': 'no',
+    'Argentina': 'ar', 'Algeria': 'dz', 'Austria': 'at', 'Giordania': 'jo',
+    'Portogallo': 'pt', 'RD Congo': 'cd', 'Uzbekistan': 'uz', 'Colombia': 'co',
+    'Inghilterra': 'gb-eng', 'Croazia': 'hr', 'Ghana': 'gh', 'Panama': 'pa',
+}
+
+
 def flag(team: str) -> str:
     return FLAGS.get(team, '')
+
+
+def flag_img(team: str, size: int = 24) -> str:
+    code = FLAG_CODES.get(team, '')
+    if not code:
+        return f'<span style="font-size:{size}px;">{FLAGS.get(team, "")}</span>'
+    return (f'<img src="https://flagcdn.com/w40/{code}.png" height="{size}" '
+            f'style="border-radius:2px;vertical-align:middle;" '
+            f'onerror="this.replaceWith(document.createTextNode(\'{FLAGS.get(team, "")}\')">')
 
 
 def fmt(team: str) -> str:
@@ -343,21 +395,21 @@ def group_card_html(grp):
     rows = ""
     for pos in range(4):
         team = grp_team(grp, pos)
-        f = flag(team)
+        img = flag_img(team, 18)
         sep = "border-bottom:1px solid rgba(255,255,255,0.07);" if pos < 3 else ""
         opacity = "1" if pos < 2 else "0.6"
         fw = "700" if pos < 2 else "400"
         rows += (
             f'<div style="display:flex;align-items:center;padding:7px 10px;{sep}opacity:{opacity}">'
             f'<span style="color:{pos_colors[pos]};font-weight:700;font-size:11px;min-width:22px;">{pos_labels[pos]}</span>'
-            f'<span style="font-size:17px;margin:0 6px 0 2px;">{f}</span>'
+            f'<span style="margin:0 6px 0 2px;display:inline-flex;align-items:center;">{img}</span>'
             f'<span style="color:white;font-size:12px;font-weight:{fw};">{team}</span>'
             f'</div>'
         )
     return (
-        f'<div style="background:#0A1628;border-radius:10px;overflow:hidden;'
-        f'border:1.5px solid #D4A017;margin-bottom:6px;">'
-        f'<div style="background:linear-gradient(135deg,#D4A017,#FFD700);'
+        f'<div style="background:#162032;border-radius:10px;overflow:hidden;'
+        f'border:1.5px solid rgba(29,233,182,0.4);margin-bottom:6px;">'
+        f'<div style="background:linear-gradient(135deg,#1DE9B6,#00BFA5);'
         f'padding:6px 10px;display:flex;justify-content:space-between;align-items:center;">'
         f'<span style="font-size:14px;font-weight:900;color:#0A1628;letter-spacing:1px;">GRUPPO {grp}</span>'
         f'<span style="font-size:16px;color:#0A1628;font-weight:900;">{grp}</span>'
@@ -422,41 +474,29 @@ with tab_g:
     )
 
     third_teams_by_grp = [(g, grp_team(g, 2)) for g in group_list]
-    grp_map = {tm: g for g, tm in third_teams_by_grp}
-    sel_thirds = st.session_state.get("thirds", [])
 
     cols4 = st.columns(4)
     for gi, (grp, t) in enumerate(third_teams_by_grp):
-        is_sel = t in sel_thirds
-        bg = "#0A1628" if is_sel else "rgba(255,255,255,0.28)"
-        border = "2px solid #FFD700" if is_sel else "1px solid rgba(10,22,40,0.12)"
-        txt_col = "#FFD700" if is_sel else "#0A1628"
-        badge = ('<div style="font-size:9px;color:#1DE9B6;font-weight:800;'
-                 'letter-spacing:0.5px;margin-top:2px;">✓ QUALIFICATA</div>') if is_sel else ""
+        is_sel = t in st.session_state.get("thirds", [])
+        btn_type = "primary" if is_sel else "secondary"
+        check = "✅ " if is_sel else ""
+        emoji = flag(t)
+        label = f"{check}GRP {grp}\n{emoji}  {t}"
         with cols4[gi % 4]:
-            st.markdown(
-                f'<div style="background:{bg};border:{border};border-radius:10px;'
-                f'padding:8px 6px;margin-bottom:8px;text-align:center;">'
-                f'<div style="color:{"rgba(255,215,0,0.7)" if is_sel else "rgba(10,22,40,0.45)"};'
-                f'font-weight:700;font-size:9px;letter-spacing:1px;">GRP {grp}</div>'
-                f'<div style="font-size:22px;margin:3px 0;">{flag(t)}</div>'
-                f'<div style="color:{txt_col};font-size:11px;font-weight:{"700" if is_sel else "500"};">{t}</div>'
-                f'{badge}</div>',
-                unsafe_allow_html=True,
-            )
+            if st.button(label, key=f"third_{grp}", use_container_width=True, type=btn_type):
+                cur = list(st.session_state.get("thirds", []))
+                if t in cur:
+                    cur.remove(t)
+                elif len(cur) < 8:
+                    cur.append(t)
+                st.session_state["thirds"] = cur
+                st.rerun()
 
-    third_teams_list = [t for _, t in third_teams_by_grp]
-    sel = st.multiselect(
-        "Scegli le 8 migliori terze",
-        options=third_teams_list,
-        key="thirds",
-        format_func=lambda t: f"{flag(t)} {t}  (Gr. {grp_map.get(t, '?')})",
-    )
-    n_sel = len(sel)
+    n_sel = len(st.session_state.get("thirds", []))
     if n_sel > 8:
         st.error(f"⚠️ Massimo 8 terze. Hai selezionato {n_sel}.")
     elif n_sel < 8:
-        st.info(f"Seleziona ancora {8 - n_sel} squadra/e.")
+        st.info(f"Clicca le squadre per selezionarle — ancora {8 - n_sel} da scegliere.")
     else:
         st.success("✅ 8 migliori terze selezionate!")
 
