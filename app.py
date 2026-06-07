@@ -1,4 +1,4 @@
-"""FIFA World Cup 2026 — Prediction App"""
+"""FIFA World Cup 2026 — Prediction App v2"""
 
 import streamlit as st
 import matplotlib
@@ -14,16 +14,147 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# ── Global CSS ────────────────────────────────────────────────────────────────
 st.markdown("""<style>
-.main .block-container {padding-top:1.2rem;padding-bottom:2rem;}
-.stTabs [data-baseweb="tab-list"] {background:#0d1117;padding:4px;border-radius:8px;gap:4px;}
-.stTabs [data-baseweb="tab"] {border-radius:6px;color:#8b949e;padding:6px 16px;}
-.stTabs [aria-selected="true"] {background:#161b22;color:#f0f6fc;font-weight:600;}
-h1 {font-size:1.7rem!important;margin-bottom:0!important;}
-h2 {font-size:1.1rem!important;}
+/* === BACKGROUND === */
+.stApp { background: #1DE9B6 !important; }
+header[data-testid="stHeader"] { background: #1DE9B6 !important; box-shadow: none !important; }
+section[data-testid="stSidebar"] { background: #0A1628 !important; }
+
+/* === BLOCK CONTAINER === */
+.main .block-container {
+    padding-top: 0.8rem;
+    padding-bottom: 2rem;
+    background: transparent;
+}
+
+/* === TABS === */
+.stTabs [data-baseweb="tab-list"] {
+    background: #0A1628;
+    padding: 5px 6px;
+    border-radius: 12px;
+    gap: 4px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+.stTabs [data-baseweb="tab"] {
+    border-radius: 8px;
+    color: #8b949e;
+    padding: 8px 22px;
+    font-weight: 600;
+}
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg,#D4A017,#FFD700) !important;
+    color: #0A1628 !important;
+    font-weight: 800;
+}
+
+/* === EXPANDERS === */
+[data-testid="stExpander"] {
+    background: rgba(255,255,255,0.90) !important;
+    border-radius: 14px !important;
+    border: 2px solid rgba(212,160,23,0.45) !important;
+    margin-bottom: 12px;
+}
+[data-testid="stExpander"] details summary p {
+    color: #0A1628 !important;
+    font-weight: 700 !important;
+}
+[data-testid="stExpander"] details summary svg { fill: #0A1628 !important; }
+
+/* === TYPOGRAPHY === */
+h1 { font-size:2.2rem !important; color:#0A1628 !important; font-weight:900 !important; }
+h2 { font-size:1.3rem !important; color:#0A1628 !important; font-weight:700 !important; }
+h3 { font-size:1.1rem !important; color:#0A1628 !important; font-weight:600 !important; }
+p, .stMarkdown p { color: #0A1628 !important; }
+label, .stSelectbox label { color: #0A1628 !important; font-weight: 600 !important; }
+.stCaption p { color: rgba(10,22,40,0.6) !important; font-size: 0.82rem !important; }
+
+/* === SELECTBOXES === */
+[data-baseweb="select"] > div:first-child {
+    background: white !important;
+    border: 1.5px solid rgba(212,160,23,0.35) !important;
+    border-radius: 8px !important;
+}
+[data-baseweb="select"] span { color: #0A1628 !important; font-weight: 500; }
+
+/* === MULTISELECT === */
+[data-baseweb="tag"] {
+    background: #0A1628 !important;
+    border-radius: 6px !important;
+}
+[data-baseweb="tag"] span { color: #FFD700 !important; }
+
+/* === METRICS === */
+[data-testid="metric-container"] {
+    background: rgba(255,255,255,0.88);
+    border-radius: 12px;
+    padding: 14px 16px;
+    border-left: 4px solid #D4A017;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+[data-testid="metric-container"] label { color: rgba(10,22,40,0.6) !important; font-weight:600 !important; }
+[data-testid="metric-container"] [data-testid="stMetricValue"] {
+    color: #0A1628 !important; font-weight: 900 !important;
+}
+
+/* === BUTTONS === */
+.stButton > button {
+    background: #0A1628 !important;
+    color: #FFD700 !important;
+    font-weight: 800 !important;
+    border: 2px solid #D4A017 !important;
+    border-radius: 10px !important;
+    letter-spacing: 0.5px;
+}
+.stButton > button:hover {
+    background: linear-gradient(135deg,#D4A017,#FFD700) !important;
+    color: #0A1628 !important;
+}
+[data-testid="stDownloadButton"] > button {
+    background: linear-gradient(135deg,#D4A017,#FFD700) !important;
+    color: #0A1628 !important;
+    font-weight: 800 !important;
+    border: none !important;
+    border-radius: 10px !important;
+}
+
+/* === DIVIDER === */
+hr { border-color: rgba(10,22,40,0.18) !important; border-width: 1.5px !important; }
+
+/* === ALERTS === */
+[data-baseweb="notification"] { border-radius: 10px !important; }
 </style>""", unsafe_allow_html=True)
 
-# ── Data ──────────────────────────────────────────────────────────────────────
+# ── Constants ─────────────────────────────────────────────────────────────────
+EMPTY = "— scegli —"
+
+FLAGS = {
+    'Messico': '🇲🇽', 'Sudafrica': '🇿🇦', 'Corea del Sud': '🇰🇷', 'Rep. Ceca': '🇨🇿',
+    'Canada': '🇨🇦', 'Bosnia': '🇧🇦', 'Qatar': '🇶🇦', 'Svizzera': '🇨🇭',
+    'Brasile': '🇧🇷', 'Marocco': '🇲🇦', 'Haiti': '🇭🇹', 'Scozia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+    'USA': '🇺🇸', 'Paraguay': '🇵🇾', 'Australia': '🇦🇺', 'Turchia': '🇹🇷',
+    'Germania': '🇩🇪', 'Curaçao': '🇨🇼', "Costa d'Avorio": '🇨🇮', 'Ecuador': '🇪🇨',
+    'Olanda': '🇳🇱', 'Giappone': '🇯🇵', 'Svezia': '🇸🇪', 'Tunisia': '🇹🇳',
+    'Belgio': '🇧🇪', 'Egitto': '🇪🇬', 'Iran': '🇮🇷', 'Nuova Zelanda': '🇳🇿',
+    'Spagna': '🇪🇸', 'Capo Verde': '🇨🇻', 'Arabia Saudita': '🇸🇦', 'Uruguay': '🇺🇾',
+    'Francia': '🇫🇷', 'Senegal': '🇸🇳', 'Iraq': '🇮🇶', 'Norvegia': '🇳🇴',
+    'Argentina': '🇦🇷', 'Algeria': '🇩🇿', 'Austria': '🇦🇹', 'Giordania': '🇯🇴',
+    'Portogallo': '🇵🇹', 'RD Congo': '🇨🇩', 'Uzbekistan': '🇺🇿', 'Colombia': '🇨🇴',
+    'Inghilterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Croazia': '🇭🇷', 'Ghana': '🇬🇭', 'Panama': '🇵🇦',
+}
+
+
+def flag(team: str) -> str:
+    return FLAGS.get(team, '')
+
+
+def fmt(team: str) -> str:
+    if not team or team == EMPTY:
+        return team or EMPTY
+    f = FLAGS.get(team, '')
+    return f"{f} {team}" if f else team
+
+
 GROUPS = {
     'A': ['Messico', 'Sudafrica', 'Corea del Sud', 'Rep. Ceca'],
     'B': ['Canada', 'Qatar', 'Svizzera', 'Bosnia'],
@@ -40,7 +171,7 @@ GROUPS = {
 }
 
 PLAYERS = [
-    "— scegli —",
+    EMPTY,
     "Erling Haaland (NOR)", "Kylian Mbappé (FRA)", "Vinícius Jr. (BRA)",
     "Harry Kane (ENG)", "Darwin Núñez (URU)", "Lamine Yamal (ESP)",
     "Endrick (BRA)", "Julián Álvarez (ARG)", "Bukayo Saka (ENG)",
@@ -60,7 +191,7 @@ PLAYERS = [
 ]
 
 U23_PLAYERS = [
-    "— scegli —",
+    EMPTY,
     "Lamine Yamal (ESP · 2007)", "Pau Cubarsí (ESP · 2007)",
     "Warren Zaïre-Emery (FRA · 2006)", "Endrick (BRA · 2006)",
     "Mathys Tel (FRA · 2005)", "Leny Yoro (FRA · 2005)",
@@ -70,8 +201,6 @@ U23_PLAYERS = [
     "Jamal Musiala (GER · 2003)", "Florian Wirtz (GER · 2003)",
     "Xavi Simons (NED · 2003)",
 ]
-
-EMPTY = "— scegli —"
 
 # (idx, slot1, slot2, venue)
 R16 = [
@@ -93,7 +222,6 @@ R16 = [
     (15, "1I", "3?", "30 giu · New Jersey"),
 ]
 
-# (idx, r16_a, r16_b, venue)
 R8 = [
     (0, 0, 1,   "5 lug"),
     (1, 2, 3,   "5 lug"),
@@ -105,7 +233,6 @@ R8 = [
     (7, 14, 15, "4 lug"),
 ]
 
-# (idx, r8_a, r8_b, venue)
 QF = [
     (0, 0, 1, "11 lug · Atlanta"),
     (1, 2, 3, "11 lug"),
@@ -113,7 +240,6 @@ QF = [
     (3, 6, 7, "9 lug"),
 ]
 
-# (idx, qf_a, qf_b, venue)
 SF = [
     (0, 0, 1, "15 lug · Atlanta"),
     (1, 2, 3, "14 lug · Dallas"),
@@ -136,19 +262,23 @@ def _init():
         if k not in st.session_state:
             st.session_state[k] = EMPTY
 
+
 _init()
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def grp_team(g, pos):
     return st.session_state.get(f"g_{g}_{pos}", GROUPS[g][pos])
 
+
 def slot_team(slot):
     if slot == "3?":
         return None
     return grp_team(slot[1], int(slot[0]) - 1)
 
+
 def get_winners(prefix, n):
     return [st.session_state.get(f"{prefix}_{i}", EMPTY) for i in range(n)]
+
 
 def dedup(lst):
     seen, out = set(), []
@@ -158,18 +288,18 @@ def dedup(lst):
             out.append(x)
     return out
 
+
 def match_widget(state_key, venue, t1, t2, thirds_pool=None):
-    """Render a match row: venue + teams + winner selectbox."""
     is_third = (t2 is None)
     if is_third:
         opts = dedup([EMPTY] + (thirds_pool or []) + ([t1] if t1 else []))
         t2_label = "Miglior 3ª"
     else:
         opts = dedup([EMPTY, t1, t2 or "?"])
-        t2_label = t2 or "?"
+        t2_label = fmt(t2) if t2 and t2 != "?" else (t2 or "?")
 
-    if not opts[0] == EMPTY:
-        opts = [EMPTY] + opts
+    if not opts or opts[0] != EMPTY:
+        opts = [EMPTY] + [o for o in opts if o != EMPTY]
 
     curr = st.session_state.get(state_key, EMPTY)
     if curr not in opts:
@@ -177,13 +307,22 @@ def match_widget(state_key, venue, t1, t2, thirds_pool=None):
 
     c1, c2 = st.columns([4, 2])
     with c1:
-        st.caption(venue)
-        st.markdown(f"**{t1 or '?'}** vs **{t2_label}**")
+        st.caption(f"📍 {venue}")
+        t1_d = fmt(t1) if t1 else "?"
+        st.markdown(f"**{t1_d}** vs **{t2_label}**")
         if is_third and thirds_pool:
-            st.caption("Possibili terze: " + ", ".join(thirds_pool[:4]) + ("…" if len(thirds_pool) > 4 else ""))
+            pool_s = "  ".join(fmt(t) for t in thirds_pool[:4])
+            extra = "…" if len(thirds_pool) > 4 else ""
+            st.caption(f"Possibili 3ª: {pool_s}{extra}")
     with c2:
-        st.selectbox("Vincitore", opts, index=opts.index(curr),
-                     key=state_key, label_visibility="collapsed")
+        st.selectbox(
+            "Vincitore", opts,
+            index=opts.index(curr),
+            key=state_key,
+            label_visibility="collapsed",
+            format_func=fmt,
+        )
+
 
 def sf_loser(sf_idx):
     _, qf_a, qf_b, _ = SF[sf_idx]
@@ -197,10 +336,49 @@ def sf_loser(sf_idx):
         return t1
     return f"Perdente SF{sf_idx+1}"
 
+
+def group_card_html(grp):
+    pos_colors = ['#FFD700', '#E8E8E8', '#CD7F32', 'rgba(255,255,255,0.35)']
+    pos_labels = ['1°', '2°', '3°', '4°']
+    rows = ""
+    for pos in range(4):
+        team = grp_team(grp, pos)
+        f = flag(team)
+        sep = "border-bottom:1px solid rgba(255,255,255,0.07);" if pos < 3 else ""
+        opacity = "1" if pos < 2 else "0.6"
+        fw = "700" if pos < 2 else "400"
+        rows += (
+            f'<div style="display:flex;align-items:center;padding:7px 10px;{sep}opacity:{opacity}">'
+            f'<span style="color:{pos_colors[pos]};font-weight:700;font-size:11px;min-width:22px;">{pos_labels[pos]}</span>'
+            f'<span style="font-size:17px;margin:0 6px 0 2px;">{f}</span>'
+            f'<span style="color:white;font-size:12px;font-weight:{fw};">{team}</span>'
+            f'</div>'
+        )
+    return (
+        f'<div style="background:#0A1628;border-radius:10px;overflow:hidden;'
+        f'border:1.5px solid #D4A017;margin-bottom:6px;">'
+        f'<div style="background:linear-gradient(135deg,#D4A017,#FFD700);'
+        f'padding:6px 10px;display:flex;justify-content:space-between;align-items:center;">'
+        f'<span style="font-size:14px;font-weight:900;color:#0A1628;letter-spacing:1px;">GRUPPO {grp}</span>'
+        f'<span style="font-size:16px;color:#0A1628;font-weight:900;">{grp}</span>'
+        f'</div>{rows}</div>'
+    )
+
+
 # ── Header ────────────────────────────────────────────────────────────────────
-st.markdown("# 🏆 FIFA World Cup 2026 · My Prediction")
-st.caption("USA · Canada · Messico  |  11 giugno – 19 luglio 2026  |  48 squadre · 104 partite")
-st.divider()
+st.markdown(
+    '<div style="background:linear-gradient(135deg,#0A1628 0%,#162032 100%);'
+    'border-radius:16px;padding:20px 28px;margin-bottom:18px;'
+    'border:2px solid #D4A017;display:flex;align-items:center;gap:18px;">'
+    '<div style="font-size:52px;line-height:1;">🏆</div>'
+    '<div>'
+    '<div style="font-size:22px;font-weight:900;color:#FFD700;letter-spacing:2px;">'
+    'FIFA WORLD CUP 2026</div>'
+    '<div style="font-size:13px;color:rgba(255,255,255,0.65);margin-top:5px;">'
+    'USA · Canada · Messico &nbsp;|&nbsp; 11 giugno – 19 luglio 2026 &nbsp;|&nbsp; 48 squadre · 104 partite'
+    '</div></div></div>',
+    unsafe_allow_html=True,
+)
 
 tab_g, tab_b, tab_a, tab_s = st.tabs(["📋  Gironi", "⚔️  Tabellone", "🌟  Premi", "📸  Salva"])
 
@@ -209,7 +387,7 @@ tab_g, tab_b, tab_a, tab_s = st.tabs(["📋  Gironi", "⚔️  Tabellone", "🌟
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab_g:
     st.subheader("Fase a Gironi — Classifica Prevista")
-    st.caption("Seleziona l'ordine dal 1° al 4° per ogni gruppo. I primi due avanzano direttamente.")
+    st.caption("Ogni card mostra la tua classifica prevista. Usa i menu a tendina per cambiare l'ordine.")
 
     POS_LABELS = ["🥇 1°", "🥈 2°", "🥉 3°", "4°"]
     group_list = list(GROUPS.keys())
@@ -223,33 +401,62 @@ with tab_g:
             grp = group_list[gi]
             teams = GROUPS[grp]
             with cols[ci]:
-                st.markdown(f"**GRUPPO {grp}**")
+                st.markdown(group_card_html(grp), unsafe_allow_html=True)
                 for pos in range(4):
                     st.selectbox(
                         POS_LABELS[pos],
                         options=teams,
                         key=f"g_{grp}_{pos}",
+                        format_func=fmt,
                         label_visibility="visible",
                     )
         st.markdown("")
 
     st.divider()
+
+    # ── Migliori Terze ────────────────────────────────────────────────────────
     st.subheader("🥉 Migliori Terze (8 di 12)")
     st.caption(
         "Nel formato a 48 squadre le 8 migliori terze avanzano ai sedicesimi. "
         "Seleziona le 8 che pensi si qualificheranno."
     )
-    third_teams = [grp_team(g, 2) for g in group_list]
+
+    third_teams_by_grp = [(g, grp_team(g, 2)) for g in group_list]
+    grp_map = {tm: g for g, tm in third_teams_by_grp}
+    sel_thirds = st.session_state.get("thirds", [])
+
+    cols4 = st.columns(4)
+    for gi, (grp, t) in enumerate(third_teams_by_grp):
+        is_sel = t in sel_thirds
+        bg = "#0A1628" if is_sel else "rgba(255,255,255,0.28)"
+        border = "2px solid #FFD700" if is_sel else "1px solid rgba(10,22,40,0.12)"
+        txt_col = "#FFD700" if is_sel else "#0A1628"
+        badge = ('<div style="font-size:9px;color:#1DE9B6;font-weight:800;'
+                 'letter-spacing:0.5px;margin-top:2px;">✓ QUALIFICATA</div>') if is_sel else ""
+        with cols4[gi % 4]:
+            st.markdown(
+                f'<div style="background:{bg};border:{border};border-radius:10px;'
+                f'padding:8px 6px;margin-bottom:8px;text-align:center;">'
+                f'<div style="color:{"rgba(255,215,0,0.7)" if is_sel else "rgba(10,22,40,0.45)"};'
+                f'font-weight:700;font-size:9px;letter-spacing:1px;">GRP {grp}</div>'
+                f'<div style="font-size:22px;margin:3px 0;">{flag(t)}</div>'
+                f'<div style="color:{txt_col};font-size:11px;font-weight:{"700" if is_sel else "500"};">{t}</div>'
+                f'{badge}</div>',
+                unsafe_allow_html=True,
+            )
+
+    third_teams_list = [t for _, t in third_teams_by_grp]
     sel = st.multiselect(
         "Scegli le 8 migliori terze",
-        options=third_teams,
+        options=third_teams_list,
         key="thirds",
+        format_func=lambda t: f"{flag(t)} {t}  (Gr. {grp_map.get(t, '?')})",
     )
-    n = len(sel)
-    if n > 8:
-        st.error(f"⚠️ Massimo 8 terze. Hai selezionato {n}.")
-    elif n < 8:
-        st.info(f"Seleziona ancora {8 - n} squadra/e.")
+    n_sel = len(sel)
+    if n_sel > 8:
+        st.error(f"⚠️ Massimo 8 terze. Hai selezionato {n_sel}.")
+    elif n_sel < 8:
+        st.info(f"Seleziona ancora {8 - n_sel} squadra/e.")
     else:
         st.success("✅ 8 migliori terze selezionate!")
 
@@ -259,7 +466,62 @@ with tab_g:
 with tab_b:
     thirds_pool = [t for t in st.session_state.get("thirds", []) if t != EMPTY][:8]
 
-    # ── Sedicesimi ───────────────────────────────────────────────
+    # ── Bracket progress summary ──────────────────────────────────────────────
+    r16_w = get_winners("r16", 16)
+    r8_w  = get_winners("r8", 8)
+    qf_w  = get_winners("qf", 4)
+    sf_w  = get_winners("sf", 2)
+    champ = st.session_state.get("champion", EMPTY)
+
+    def _pill(team, gold=False):
+        f = flag(team) if team and team != EMPTY else ""
+        name = team[:14] if team and team != EMPTY else "?"
+        bg = "linear-gradient(135deg,#D4A017,#FFD700)" if gold else "#0A1628"
+        col = "#0A1628" if gold else "white"
+        border = "#FFD700" if not gold else "transparent"
+        return (
+            f'<div style="background:{bg};border:1px solid {border};border-radius:7px;'
+            f'padding:4px 8px;margin:3px 2px;display:inline-block;white-space:nowrap;">'
+            f'<span style="color:{col};font-size:11px;font-weight:{"800" if gold else "600"};">'
+            f'{f} {name}</span></div>'
+        )
+
+    stages = [
+        ("Sedicesimi", r16_w, False),
+        ("Ottavi", r8_w, False),
+        ("Quarti", qf_w, False),
+        ("Semifinali", sf_w, True),
+    ]
+    rows_html = ""
+    for stage_name, winners, is_sf in stages:
+        filled = [w for w in winners if w != EMPTY]
+        pills = "".join(_pill(w, gold=is_sf) for w in filled) if filled else (
+            '<span style="color:rgba(255,255,255,0.35);font-size:11px;">non ancora compilato</span>'
+        )
+        rows_html += (
+            f'<div style="margin-bottom:8px;">'
+            f'<span style="color:#FFD700;font-weight:700;font-size:11px;'
+            f'min-width:90px;display:inline-block;">{stage_name}</span>{pills}</div>'
+        )
+
+    champ_html = (
+        f'<div style="margin-top:10px;text-align:center;padding:10px;'
+        f'background:linear-gradient(135deg,#D4A017,#FFD700);border-radius:10px;">'
+        f'<span style="font-size:20px;">🏆</span>'
+        f'<span style="color:#0A1628;font-size:15px;font-weight:900;margin-left:8px;">'
+        f'{fmt(champ) if champ != EMPTY else "— da definire —"}</span></div>'
+    ) if champ != EMPTY else ""
+
+    st.markdown(
+        f'<div style="background:#0A1628;border-radius:14px;padding:16px 18px;'
+        f'margin-bottom:16px;border:2px solid #D4A017;">'
+        f'<div style="color:#FFD700;font-weight:800;font-size:13px;margin-bottom:10px;'
+        f'letter-spacing:1px;">⚔️ STATO TABELLONE</div>'
+        f'{rows_html}{champ_html}</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Sedicesimi ───────────────────────────────────────────────────────────
     with st.expander("⚔️  Sedicesimi di Finale  (32 → 16)", expanded=True):
         st.caption("Scegli il vincitore di ogni partita.")
         left, right = st.columns(2)
@@ -268,10 +530,13 @@ with tab_b:
             t2 = slot_team(s2)
             col = left if idx < 8 else right
             with col:
-                match_widget(f"r16_{idx}", venue, t1, t2, thirds_pool if s2 == "3?" else None)
+                match_widget(
+                    f"r16_{idx}", venue, t1, t2,
+                    thirds_pool if s2 == "3?" else None,
+                )
                 st.markdown("")
 
-    # ── Ottavi ──────────────────────────────────────────────────
+    # ── Ottavi ──────────────────────────────────────────────────────────────
     r16_w = get_winners("r16", 16)
     with st.expander("🔥  Ottavi di Finale  (16 → 8)", expanded=False):
         st.caption("Popola i Sedicesimi prima per vedere i nomi automaticamente.")
@@ -287,14 +552,19 @@ with tab_b:
             with col:
                 c1, c2 = st.columns([4, 2])
                 with c1:
-                    st.caption(venue)
-                    st.markdown(f"**{t1}** vs **{t2}**")
+                    st.caption(f"📍 {venue}")
+                    st.markdown(f"**{fmt(t1)}** vs **{fmt(t2)}**")
                 with c2:
-                    st.selectbox("Vinc.", opts, index=opts.index(curr),
-                                 key=f"r8_{idx}", label_visibility="collapsed")
+                    st.selectbox(
+                        "Vinc.", opts,
+                        index=opts.index(curr),
+                        key=f"r8_{idx}",
+                        label_visibility="collapsed",
+                        format_func=fmt,
+                    )
                 st.markdown("")
 
-    # ── Quarti ──────────────────────────────────────────────────
+    # ── Quarti ──────────────────────────────────────────────────────────────
     r8_w = get_winners("r8", 8)
     with st.expander("⚡  Quarti di Finale  (8 → 4)", expanded=False):
         cols = st.columns(2)
@@ -308,14 +578,19 @@ with tab_b:
             with cols[idx % 2]:
                 c1, c2 = st.columns([4, 2])
                 with c1:
-                    st.caption(venue)
-                    st.markdown(f"**{t1}** vs **{t2}**")
+                    st.caption(f"📍 {venue}")
+                    st.markdown(f"**{fmt(t1)}** vs **{fmt(t2)}**")
                 with c2:
-                    st.selectbox("Vinc.", opts, index=opts.index(curr),
-                                 key=f"qf_{idx}", label_visibility="collapsed")
+                    st.selectbox(
+                        "Vinc.", opts,
+                        index=opts.index(curr),
+                        key=f"qf_{idx}",
+                        label_visibility="collapsed",
+                        format_func=fmt,
+                    )
                 st.markdown("")
 
-    # ── Semifinali ──────────────────────────────────────────────
+    # ── Semifinali ──────────────────────────────────────────────────────────
     qf_w = get_winners("qf", 4)
     with st.expander("🌟  Semifinali  (4 → 2)", expanded=False):
         cols = st.columns(2)
@@ -329,19 +604,23 @@ with tab_b:
             with cols[idx]:
                 c1, c2 = st.columns([4, 2])
                 with c1:
-                    st.caption(venue)
-                    st.markdown(f"**{t1}** vs **{t2}**")
+                    st.caption(f"📍 {venue}")
+                    st.markdown(f"**{fmt(t1)}** vs **{fmt(t2)}**")
                 with c2:
-                    st.selectbox("Vinc.", opts, index=opts.index(curr),
-                                 key=f"sf_{idx}", label_visibility="collapsed")
+                    st.selectbox(
+                        "Vinc.", opts,
+                        index=opts.index(curr),
+                        key=f"sf_{idx}",
+                        label_visibility="collapsed",
+                        format_func=fmt,
+                    )
                 st.markdown("")
 
-    # ── Finali ──────────────────────────────────────────────────
+    # ── Finali ──────────────────────────────────────────────────────────────
     sf_w = get_winners("sf", 2)
     with st.expander("🏆  Finali", expanded=True):
         col_f, col_3 = st.columns(2)
 
-        # Finale
         ft1 = sf_w[0] if sf_w[0] != EMPTY else "Vinc. SF1"
         ft2 = sf_w[1] if sf_w[1] != EMPTY else "Vinc. SF2"
         fopts = dedup([EMPTY, ft1, ft2])
@@ -352,12 +631,16 @@ with tab_b:
             st.markdown("**🏆 FINALE** · 19 luglio · MetLife Stadium, New Jersey")
             c1, c2 = st.columns([4, 2])
             with c1:
-                st.markdown(f"**{ft1}** vs **{ft2}**")
+                st.markdown(f"**{fmt(ft1)}** vs **{fmt(ft2)}**")
             with c2:
-                st.selectbox("Campione", fopts, index=fopts.index(fcurr),
-                             key="champion", label_visibility="collapsed")
+                st.selectbox(
+                    "Campione", fopts,
+                    index=fopts.index(fcurr),
+                    key="champion",
+                    label_visibility="collapsed",
+                    format_func=fmt,
+                )
 
-        # 3° posto
         l1 = sf_loser(0)
         l2 = sf_loser(1)
         t3opts = dedup([EMPTY, l1, l2])
@@ -368,10 +651,15 @@ with tab_b:
             st.markdown("**🥉 FINALE 3° POSTO** · 18 luglio · Miami")
             c1, c2 = st.columns([4, 2])
             with c1:
-                st.markdown(f"**{l1}** vs **{l2}**")
+                st.markdown(f"**{fmt(l1)}** vs **{fmt(l2)}**")
             with c2:
-                st.selectbox("3° posto", t3opts, index=t3opts.index(t3curr),
-                             key="third_pl", label_visibility="collapsed")
+                st.selectbox(
+                    "3° posto", t3opts,
+                    index=t3opts.index(t3curr),
+                    key="third_pl",
+                    label_visibility="collapsed",
+                    format_func=fmt,
+                )
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # TAB 3 — PREMI
@@ -382,84 +670,112 @@ with tab_a:
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        st.markdown("#### 🏅 Miglior Giocatore")
+        st.markdown(
+            '<div style="background:#0A1628;border-radius:12px;padding:10px 14px;'
+            'border:1.5px solid #D4A017;margin-bottom:8px;text-align:center;">'
+            '<span style="color:#FFD700;font-size:22px;">🏅</span>'
+            '<div style="color:#FFD700;font-weight:800;font-size:13px;margin-top:4px;">'
+            'MIGLIOR GIOCATORE</div></div>',
+            unsafe_allow_html=True,
+        )
         bp = st.session_state.get("best_player", EMPTY)
-        st.selectbox("Miglior Giocatore", PLAYERS,
-                     index=PLAYERS.index(bp) if bp in PLAYERS else 0,
-                     key="best_player", label_visibility="collapsed")
+        st.selectbox(
+            "Miglior Giocatore", PLAYERS,
+            index=PLAYERS.index(bp) if bp in PLAYERS else 0,
+            key="best_player",
+            label_visibility="collapsed",
+        )
 
     with c2:
-        st.markdown("#### ⚽ Capocannoniere")
+        st.markdown(
+            '<div style="background:#0A1628;border-radius:12px;padding:10px 14px;'
+            'border:1.5px solid #D4A017;margin-bottom:8px;text-align:center;">'
+            '<span style="color:#FFD700;font-size:22px;">⚽</span>'
+            '<div style="color:#FFD700;font-weight:800;font-size:13px;margin-top:4px;">'
+            'CAPOCANNONIERE</div></div>',
+            unsafe_allow_html=True,
+        )
         ts = st.session_state.get("top_scorer", EMPTY)
-        st.selectbox("Capocannoniere", PLAYERS,
-                     index=PLAYERS.index(ts) if ts in PLAYERS else 0,
-                     key="top_scorer", label_visibility="collapsed")
+        st.selectbox(
+            "Capocannoniere", PLAYERS,
+            index=PLAYERS.index(ts) if ts in PLAYERS else 0,
+            key="top_scorer",
+            label_visibility="collapsed",
+        )
 
     with c3:
-        st.markdown("#### 🌱 Miglior Under 23")
+        st.markdown(
+            '<div style="background:#0A1628;border-radius:12px;padding:10px 14px;'
+            'border:1.5px solid #D4A017;margin-bottom:8px;text-align:center;">'
+            '<span style="color:#FFD700;font-size:22px;">🌱</span>'
+            '<div style="color:#FFD700;font-weight:800;font-size:13px;margin-top:4px;">'
+            'MIGLIOR UNDER 23</div></div>',
+            unsafe_allow_html=True,
+        )
         bu = st.session_state.get("best_u23", EMPTY)
-        st.selectbox("Miglior U23", U23_PLAYERS,
-                     index=U23_PLAYERS.index(bu) if bu in U23_PLAYERS else 0,
-                     key="best_u23", label_visibility="collapsed")
+        st.selectbox(
+            "Miglior U23", U23_PLAYERS,
+            index=U23_PLAYERS.index(bu) if bu in U23_PLAYERS else 0,
+            key="best_u23",
+            label_visibility="collapsed",
+        )
 
     st.caption("Non trovi il giocatore? Digita il nome direttamente nella casella.")
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # IMAGE GENERATION
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-BG    = '#0d1117'
-CARD  = '#161b22'
-LINE  = '#30363d'
-BLUE  = '#58a6ff'
-GREEN = '#3fb950'
-GOLD  = '#d4a017'
-TEXT  = '#e6edf3'
-MUTED = '#8b949e'
+IMG_BG    = '#0A1628'
+IMG_CARD  = '#162032'
+IMG_LINE  = '#2d3f5a'
+IMG_TEAL  = '#1DE9B6'
+IMG_GOLD  = '#D4A017'
+IMG_TEXT  = '#F0F6FC'
+IMG_MUTED = '#8b949e'
 
-def pill(ax, x, y, w, h, text, color=TEXT, bg=CARD, border=LINE, fontsize=7, bold=False):
+
+def pill(ax, x, y, w, h, text, color=IMG_TEXT, bg=IMG_CARD, border=IMG_LINE,
+         fontsize=7, bold=False):
     rect = FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.15",
                           facecolor=bg, edgecolor=border, linewidth=0.6, zorder=2)
     ax.add_patch(rect)
     if text and text != EMPTY:
-        short = text[:15]
+        short = text[:16]
         ax.text(x + w / 2, y + h / 2, short, ha='center', va='center',
                 fontsize=fontsize, color=color,
                 fontweight='bold' if bold else 'normal', zorder=3)
     else:
         ax.text(x + w / 2, y + h / 2, '?', ha='center', va='center',
-                fontsize=fontsize, color=MUTED, zorder=3)
+                fontsize=fontsize, color=IMG_MUTED, zorder=3)
 
 
 def generate_image() -> bytes:
-    r16_w  = get_winners("r16", 16)
-    r8_w   = get_winners("r8", 8)
-    qf_w   = get_winners("qf", 4)
-    sf_w   = get_winners("sf", 2)
-    champ  = st.session_state.get("champion", EMPTY)
-    third  = st.session_state.get("third_pl", EMPTY)
-    bp     = st.session_state.get("best_player", EMPTY)
-    ts     = st.session_state.get("top_scorer", EMPTY)
-    bu     = st.session_state.get("best_u23", EMPTY)
+    r16_win = get_winners("r16", 16)
+    r8_win  = get_winners("r8", 8)
+    qf_win  = get_winners("qf", 4)
+    sf_win  = get_winners("sf", 2)
+    champ   = st.session_state.get("champion", EMPTY)
+    third   = st.session_state.get("third_pl", EMPTY)
+    bp      = st.session_state.get("best_player", EMPTY)
+    ts      = st.session_state.get("top_scorer", EMPTY)
+    bu      = st.session_state.get("best_u23", EMPTY)
 
-    fig = plt.figure(figsize=(20, 28), facecolor=BG)
+    fig = plt.figure(figsize=(20, 28), facecolor=IMG_BG)
 
-    # ── 1. Header ────────────────────────────────────────────────
+    # Header
     ax_h = fig.add_axes([0, 0.965, 1, 0.035])
-    ax_h.set_facecolor(BLUE)
+    ax_h.set_facecolor(IMG_TEAL)
     ax_h.axis('off')
     ax_h.text(0.5, 0.5, '🏆  FIFA WORLD CUP 2026  ·  MY PREDICTION',
               ha='center', va='center', fontsize=17, fontweight='bold',
-              color='white', transform=ax_h.transAxes)
+              color=IMG_BG, transform=ax_h.transAxes)
 
-    # ── 2. Groups ────────────────────────────────────────────────
-    # 3 rows × 4 cols grid, occupies y=[0.60, 0.960]
+    # Groups grid (3 rows × 4 cols)
     gkeys = list(GROUPS.keys())
-    g_top = 0.960
-    g_bot = 0.600
+    g_top, g_bot = 0.960, 0.600
     cell_w = 0.245
     cell_h = (g_top - g_bot) / 3 - 0.005
-
-    POS_COLORS = [GOLD, GREEN, MUTED, MUTED]
+    POS_COLORS_IMG = [IMG_GOLD, '#d0d0d0', '#cd7f32', IMG_MUTED]
     POS_LABELS_IMG = ['1°', '2°', '3°', '4°']
 
     for gi, grp in enumerate(gkeys):
@@ -468,101 +784,88 @@ def generate_image() -> bytes:
         lx = col * 0.25 + 0.005
         ly = g_top - (row + 1) * (cell_h + 0.008)
         ax = fig.add_axes([lx, ly, cell_w, cell_h])
-        ax.set_facecolor(CARD)
+        ax.set_facecolor(IMG_CARD)
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
         ax.axis('off')
         for s in ax.spines.values():
-            s.set_edgecolor(LINE)
-            s.set_linewidth(0.5)
+            s.set_edgecolor(IMG_GOLD)
+            s.set_linewidth(0.8)
         ax.text(0.5, 0.90, f'GRUPPO {grp}', ha='center', va='center',
-                fontsize=9, fontweight='bold', color=BLUE)
+                fontsize=9, fontweight='bold', color=IMG_TEAL)
         for pos in range(4):
             team = grp_team(grp, pos)
+            f = flag(team)
             yy = 0.72 - pos * 0.18
             ax.text(0.06, yy, POS_LABELS_IMG[pos], ha='left', va='center',
-                    fontsize=7.5, color=POS_COLORS[pos], fontweight='bold')
-            ax.text(0.26, yy, team[:16], ha='left', va='center',
-                    fontsize=7.5, color=TEXT if pos < 2 else MUTED)
+                    fontsize=7.5, color=POS_COLORS_IMG[pos], fontweight='bold')
+            ax.text(0.24, yy, f"{f} {team[:14]}", ha='left', va='center',
+                    fontsize=7, color=IMG_TEXT if pos < 2 else IMG_MUTED)
 
-    # ── 3. Bracket ──────────────────────────────────────────────
-    # Occupies y=[0.115, 0.595]
+    # Bracket
     ax_br = fig.add_axes([0, 0.115, 1, 0.480])
-    ax_br.set_facecolor(BG)
+    ax_br.set_facecolor(IMG_BG)
     ax_br.set_xlim(0, 100)
     ax_br.set_ylim(0, 100)
     ax_br.axis('off')
-
     ax_br.text(50, 97, '⚔️  TABELLONE — FASE AD ELIMINAZIONE DIRETTA',
-               ha='center', va='center', fontsize=12, fontweight='bold', color=BLUE)
+               ha='center', va='center', fontsize=12, fontweight='bold', color=IMG_TEAL)
 
-    # Column x centers and headers
     col_info = [
-        (10,  "SEDICESIMI"),
-        (27,  "OTTAVI"),
-        (44,  "QUARTI"),
-        (61,  "SEMIFINALI"),
-        (83,  "FINALE"),
+        (10, "SEDICESIMI"), (27, "OTTAVI"), (44, "QUARTI"),
+        (61, "SEMIFINALI"), (83, "FINALE"),
     ]
     for cx, name in col_info:
         ax_br.text(cx, 92, name, ha='center', va='center',
-                   fontsize=8, color=MUTED, fontweight='bold')
-        ax_br.plot([cx - 7, cx + 7], [90, 90], color=LINE, lw=0.4)
+                   fontsize=8, color=IMG_MUTED, fontweight='bold')
+        ax_br.plot([cx - 7, cx + 7], [90, 90], color=IMG_LINE, lw=0.4)
 
-    PW, PH = 13, 3.8  # pill width, height
+    PW, PH = 13, 3.8
 
-    def draw_col(teams, cx, start_y, step, color=TEXT, bg=CARD, border=LINE, fontsize=7, bold=False):
+    def draw_col(teams, cx, start_y, step, color=IMG_TEXT, bg=IMG_CARD,
+                 border=IMG_LINE, fontsize=7, bold=False):
         for i, t in enumerate(teams):
             y = start_y - i * step
-            pill(ax_br, cx - PW / 2, y - PH / 2, PW, PH, t, color, bg, border, fontsize, bold)
+            pill(ax_br, cx - PW / 2, y - PH / 2, PW, PH, t,
+                 color, bg, border, fontsize, bold)
 
-    # Sedicesimi: 2 sub-cols (L: 0-7, R: 8-15)
-    left_16 = [r16_w[i] for i in range(8)]
-    right_16 = [r16_w[i] for i in range(8, 16)]
-    draw_col(left_16, 5, 85, 10)
-    draw_col(right_16, 16, 85, 10)
+    draw_col([r16_win[i] for i in range(8)],  5,  85, 10)
+    draw_col([r16_win[i] for i in range(8, 16)], 16, 85, 10)
+    draw_col([r8_win[i] for i in range(4)],  22, 80, 20)
+    draw_col([r8_win[i] for i in range(4, 8)], 32, 80, 20)
+    draw_col(qf_win[:2], 39, 70, 40)
+    draw_col(qf_win[2:], 49, 70, 40)
+    draw_col(sf_win[:1], 56, 50, 40, color=IMG_GOLD, border=IMG_GOLD, bold=True)
+    draw_col(sf_win[1:], 67, 50, 40, color=IMG_GOLD, border=IMG_GOLD, bold=True)
 
-    # Ottavi: 2 sub-cols (L: 0-3, R: 4-7)
-    left_8 = [r8_w[i] for i in range(4)]
-    right_8 = [r8_w[i] for i in range(4, 8)]
-    draw_col(left_8, 22, 80, 20)
-    draw_col(right_8, 32, 80, 20)
-
-    # Quarti: 2 sub-cols (0-1, 2-3)
-    draw_col(qf_w[:2], 39, 70, 40)
-    draw_col(qf_w[2:], 49, 70, 40)
-
-    # Semifinali
-    draw_col(sf_w[:1], 56, 50, 40, color=GOLD, border=GOLD, bold=True)
-    draw_col(sf_w[1:], 67, 50, 40, color=GOLD, border=GOLD, bold=True)
-
-    # Arrow to final
     ax_br.annotate("", xy=(73, 50), xytext=(70, 50),
-                   arrowprops=dict(arrowstyle="->", color=GOLD, lw=1.5))
+                   arrowprops=dict(arrowstyle="->", color=IMG_GOLD, lw=1.5))
 
-    # Champion box
     cx_final = 85
-    rect_champ = FancyBboxPatch((cx_final - 10, 38), 20, 24,
-                                 boxstyle="round,pad=0.5",
-                                 facecolor='#1a2e1a', edgecolor=GOLD, linewidth=2.5, zorder=2)
+    rect_champ = FancyBboxPatch(
+        (cx_final - 10, 38), 20, 24, boxstyle="round,pad=0.5",
+        facecolor='#0f2a1a', edgecolor=IMG_GOLD, linewidth=2.5, zorder=2,
+    )
     ax_br.add_patch(rect_champ)
     ax_br.text(cx_final, 60, '🏆', ha='center', va='center', fontsize=22, zorder=3)
     ax_br.text(cx_final, 54, 'CAMPIONE', ha='center', va='center',
-               fontsize=8, color=GOLD, fontweight='bold', zorder=3)
+               fontsize=8, color=IMG_GOLD, fontweight='bold', zorder=3)
     champ_disp = champ if champ and champ != EMPTY else '?'
-    ax_br.text(cx_final, 48, champ_disp[:18], ha='center', va='center',
-               fontsize=11, color=GOLD, fontweight='bold', zorder=3)
+    f_c = flag(champ_disp) if champ_disp != '?' else ''
+    ax_br.text(cx_final, 47, f"{f_c} {champ_disp[:16]}", ha='center', va='center',
+               fontsize=10, color=IMG_GOLD, fontweight='bold', zorder=3)
     third_disp = third if third and third != EMPTY else '?'
-    ax_br.text(cx_final, 42, f"🥉  3° posto: {third_disp[:14]}", ha='center', va='center',
-               fontsize=8, color=MUTED, zorder=3)
+    f_t = flag(third_disp) if third_disp != '?' else ''
+    ax_br.text(cx_final, 41, f"🥉 3°: {f_t} {third_disp[:12]}", ha='center', va='center',
+               fontsize=8, color=IMG_MUTED, zorder=3)
 
-    # ── 4. Awards ───────────────────────────────────────────────
+    # Awards bar
     ax_aw = fig.add_axes([0, 0.04, 1, 0.07])
-    ax_aw.set_facecolor(CARD)
+    ax_aw.set_facecolor(IMG_CARD)
     ax_aw.set_xlim(0, 1)
     ax_aw.set_ylim(0, 1)
     ax_aw.axis('off')
-    ax_aw.plot([0, 1], [0.97, 0.97], color=BLUE, lw=1.5)
+    ax_aw.plot([0, 1], [0.97, 0.97], color=IMG_TEAL, lw=1.5)
 
     awards = [
         ("🏅  MIGLIOR GIOCATORE", bp),
@@ -572,21 +875,22 @@ def generate_image() -> bytes:
     for i, (label, val) in enumerate(awards):
         xi = (i + 0.5) / 3
         ax_aw.text(xi, 0.75, label, ha='center', va='center',
-                   fontsize=8, color=MUTED, fontweight='bold')
+                   fontsize=8, color=IMG_MUTED, fontweight='bold')
         disp = val if val and val != EMPTY else '—'
         ax_aw.text(xi, 0.38, disp[:26], ha='center', va='center',
-                   fontsize=10, color=TEXT, fontweight='bold')
+                   fontsize=10, color=IMG_TEXT, fontweight='bold')
 
-    # ── 5. Footer ───────────────────────────────────────────────
+    # Footer
     ax_f = fig.add_axes([0, 0, 1, 0.04])
-    ax_f.set_facecolor(BG)
+    ax_f.set_facecolor(IMG_BG)
     ax_f.axis('off')
-    ax_f.text(0.5, 0.6, 'FIFA World Cup 2026  ·  USA · Canada · Messico  ·  11 giu – 19 lug 2026',
-              ha='center', va='center', fontsize=8, color=MUTED)
-    ax_f.plot([0.1, 0.9], [0.9, 0.9], color=LINE, lw=0.5)
+    ax_f.text(0.5, 0.6,
+              'FIFA World Cup 2026  ·  USA · Canada · Messico  ·  11 giu – 19 lug 2026',
+              ha='center', va='center', fontsize=8, color=IMG_MUTED)
+    ax_f.plot([0.1, 0.9], [0.9, 0.9], color=IMG_LINE, lw=0.5)
 
     buf = io.BytesIO()
-    fig.savefig(buf, format='png', dpi=140, bbox_inches='tight', facecolor=BG)
+    fig.savefig(buf, format='png', dpi=140, bbox_inches='tight', facecolor=IMG_BG)
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()
@@ -607,8 +911,8 @@ with tab_s:
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.metric("🏆 Campione del Mondo", champion if champion != EMPTY else "—")
-        st.metric("🥉 3° Posto", third_pl if third_pl != EMPTY else "—")
+        st.metric("🏆 Campione del Mondo", fmt(champion) if champion != EMPTY else "—")
+        st.metric("🥉 3° Posto", fmt(third_pl) if third_pl != EMPTY else "—")
     with c2:
         st.metric("🏅 Miglior Giocatore", bp if bp != EMPTY else "—")
         st.metric("⚽ Capocannoniere", ts if ts != EMPTY else "—")
@@ -630,4 +934,4 @@ with tab_s:
             mime="image/png",
             use_container_width=True,
         )
-        st.success("✅ Pronta! Condividi su LinkedIn con l'hashtag #WorldCup2026")
+        st.success("✅ Pronta! Condividi con l'hashtag #WorldCup2026 #FIFA2026")
