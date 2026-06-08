@@ -132,8 +132,7 @@ label, .stSelectbox label { color: #F0F6FC !important; font-weight: 600 !importa
     color: #F0F6FC !important;
     font-weight: 600 !important;
     border: 1px solid rgba(29,233,182,0.25) !important;
-    min-height: 78px !important;
-    white-space: pre-wrap !important;
+    white-space: nowrap !important;
     font-size: 12px !important;
     line-height: 1.5 !important;
 }
@@ -148,8 +147,7 @@ label, .stSelectbox label { color: #F0F6FC !important; font-weight: 600 !importa
     color: #0A1628 !important;
     font-weight: 800 !important;
     border: 2px solid #FFD700 !important;
-    min-height: 78px !important;
-    white-space: pre-wrap !important;
+    white-space: nowrap !important;
     font-size: 12px !important;
     line-height: 1.5 !important;
 }
@@ -168,7 +166,7 @@ hr { border-color: rgba(29,233,182,0.2) !important; border-width: 1.5px !importa
 [data-baseweb="notification"] { border-radius: 10px !important; }
 
 /* === BRACKET: UNIFORM BUTTON HEIGHT === */
-button[kind="primary"], button[kind="secondary"] {
+.stButton > button[kind="primary"], .stButton > button[kind="secondary"] {
     min-height: 36px !important;
     max-height: 36px !important;
     height: 36px !important;
@@ -178,6 +176,11 @@ button[kind="primary"], button[kind="secondary"] {
     font-size: 11px !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
+}
+/* Bracket: remove stButton wrapper vertical margin */
+div[data-testid="stVerticalBlock"] .stButton {
+    margin-top: 1px !important;
+    margin-bottom: 1px !important;
 }
 </style>""", unsafe_allow_html=True)
 
