@@ -8,6 +8,11 @@ from matplotlib.patches import FancyBboxPatch
 import io
 import base64
 import os
+try:
+    from streamlit_sortables import sort_items as _sort_items
+    HAS_SORTABLES = True
+except ImportError:
+    HAS_SORTABLES = False
 
 
 @st.cache_data
@@ -311,10 +316,17 @@ SF = [
 # ── Session state ─────────────────────────────────────────────────────────────
 def _init():
     for grp, teams in GROUPS.items():
-        for pos in range(4):
-            k = f"g_{grp}_{pos}"
-            if k not in st.session_state:
-                st.session_state[k] = teams[pos]
+        key = f"g_{grp}_order"
+        if key not in st.session_state:
+            order = []
+            for pos in range(4):
+                old = f"g_{grp}_{pos}"
+                if old in st.session_state and st.session_state[old] not in order:
+                    order.append(st.session_state[old])
+            for t in teams:
+                if t not in order:
+                    order.append(t)
+            st.session_state[key] = order[:4]
     if "thirds" not in st.session_state:
         st.session_state.thirds = []
     for prefix, n in [("r16", 16), ("r8", 8), ("qf", 4), ("sf", 2)]:
@@ -330,7 +342,8 @@ _init()
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def grp_team(g, pos):
-    return st.session_state.get(f"g_{g}_{pos}", GROUPS[g][pos])
+    order = st.session_state.get(f"g_{g}_order", GROUPS[g])
+    return order[pos] if pos < len(order) else GROUPS[g][pos]
 
 
 def slot_team(slot):
@@ -456,9 +469,8 @@ tab_g, tab_b, tab_a, tab_s = st.tabs(["📋  Gironi", "⚔️  Tabellone", "🌟
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab_g:
     st.subheader("Fase a Gironi — Classifica Prevista")
-    st.caption("Ogni card mostra la tua classifica prevista. Usa i menu a tendina per cambiare l'ordine.")
+    st.caption("Trascina le nazionali per riordinare la classifica del girone.")
 
-    POS_LABELS = ["🥇 1°", "🥈 2°", "🥉 3°", "4°"]
     group_list = list(GROUPS.keys())
 
     for row_start in range(0, 12, 4):
@@ -468,17 +480,33 @@ with tab_g:
             if gi >= 12:
                 break
             grp = group_list[gi]
-            teams = GROUPS[grp]
             with cols[ci]:
+                # Visual card (reads current order from session state)
                 st.markdown(group_card_html(grp), unsafe_allow_html=True)
-                for pos in range(4):
-                    st.selectbox(
-                        POS_LABELS[pos],
-                        options=teams,
-                        key=f"g_{grp}_{pos}",
-                        format_func=fmt,
-                        label_visibility="visible",
-                    )
+                # Drag-to-reorder
+                current = list(st.session_state.get(f"g_{grp}_order", GROUPS[grp]))
+                lbl2team = {f"{flag(t)} {t}": t for t in GROUPS[grp]}
+                items = [f"{flag(t)} {t}" for t in current]
+                if HAS_SORTABLES:
+                    new_items = _sort_items(items, key=f"sort_{grp}", direction="vertical")
+                    if new_items and new_items != items:
+                        new_order = [lbl2team[l] for l in new_items if l in lbl2team]
+                        if len(new_order) == 4:
+                            st.session_state[f"g_{grp}_order"] = new_order
+                            st.rerun()
+                else:
+                    # Fallback: up/down buttons
+                    for pos, t in enumerate(current):
+                        c1, c2, c3 = st.columns([6, 1, 1])
+                        c1.write(f"{['🥇','🥈','🥉','4°'][pos]} {flag(t)} {t}")
+                        if pos > 0 and c2.button("▲", key=f"up_{grp}_{pos}"):
+                            current[pos], current[pos-1] = current[pos-1], current[pos]
+                            st.session_state[f"g_{grp}_order"] = current
+                            st.rerun()
+                        if pos < 3 and c3.button("▼", key=f"dn_{grp}_{pos}"):
+                            current[pos], current[pos+1] = current[pos+1], current[pos]
+                            st.session_state[f"g_{grp}_order"] = current
+                            st.rerun()
         st.markdown("")
 
     st.divider()
@@ -523,200 +551,163 @@ with tab_g:
 with tab_b:
     thirds_pool = [t for t in st.session_state.get("thirds", []) if t != EMPTY][:8]
 
-    # ── Bracket progress summary ──────────────────────────────────────────────
-    r16_w = get_winners("r16", 16)
-    r8_w  = get_winners("r8", 8)
-    qf_w  = get_winners("qf", 4)
-    sf_w  = get_winners("sf", 2)
-    champ = st.session_state.get("champion", EMPTY)
+    # ── Thirds auto-assignment ────────────────────────────────────────────────
+    # R16 indices that have "3?" (best-third) slots, in bracket order
+    _THIRD_SLOTS = [0, 1, 4, 5, 8, 9, 14, 15]
 
-    def _pill(team, gold=False):
-        f = flag(team) if team and team != EMPTY else ""
-        name = team[:14] if team and team != EMPTY else "?"
-        bg = "linear-gradient(135deg,#D4A017,#FFD700)" if gold else "#0A1628"
-        col = "#0A1628" if gold else "white"
-        border = "#FFD700" if not gold else "transparent"
+    def third_for(r16_idx):
+        if r16_idx not in _THIRD_SLOTS:
+            return None
+        pos = _THIRD_SLOTS.index(r16_idx)
+        return thirds_pool[pos] if pos < len(thirds_pool) else None
+
+    # ── Match card helper ─────────────────────────────────────────────────────
+    def _stage_hdr(title):
         return (
-            f'<div style="background:{bg};border:1px solid {border};border-radius:7px;'
-            f'padding:4px 8px;margin:3px 2px;display:inline-block;white-space:nowrap;">'
-            f'<span style="color:{col};font-size:11px;font-weight:{"800" if gold else "600"};">'
-            f'{f} {name}</span></div>'
+            f'<div style="background:linear-gradient(90deg,rgba(29,233,182,0.15),transparent);'
+            f'border-left:4px solid #1DE9B6;padding:10px 16px;border-radius:0 8px 8px 0;'
+            f'margin:20px 0 10px 0;">'
+            f'<span style="color:#1DE9B6;font-size:13px;font-weight:900;letter-spacing:2px;">'
+            f'{title}</span></div>'
         )
 
-    stages = [
-        ("Sedicesimi", r16_w, False),
-        ("Ottavi", r8_w, False),
-        ("Quarti", qf_w, False),
-        ("Semifinali", sf_w, True),
-    ]
-    rows_html = ""
-    for stage_name, winners, is_sf in stages:
-        filled = [w for w in winners if w != EMPTY]
-        pills = "".join(_pill(w, gold=is_sf) for w in filled) if filled else (
-            '<span style="color:rgba(255,255,255,0.35);font-size:11px;">non ancora compilato</span>'
-        )
-        rows_html += (
-            f'<div style="margin-bottom:8px;">'
-            f'<span style="color:#FFD700;font-weight:700;font-size:11px;'
-            f'min-width:90px;display:inline-block;">{stage_name}</span>{pills}</div>'
-        )
+    def mk(key, t1, t2, venue):
+        """Compact match card: click a team to pick it as winner (click again to deselect)."""
+        winner = st.session_state.get(key, EMPTY)
+        valid = [t for t in [t1, t2] if t and t != EMPTY]
+        if winner not in valid:
+            if winner != EMPTY:
+                st.session_state[key] = EMPTY
+            winner = EMPTY
 
+        st.markdown(
+            f'<div style="font-size:9px;color:rgba(29,233,182,0.5);font-weight:600;'
+            f'letter-spacing:0.5px;margin-bottom:1px;">📍 {venue}</div>',
+            unsafe_allow_html=True,
+        )
+        for team, slot in [(t1, "_a"), (t2, "_b")]:
+            if team and team != EMPTY:
+                btn_type = "primary" if winner == team else "secondary"
+                if st.button(f"{flag(team)} {team}", key=f"{key}{slot}",
+                             type=btn_type, use_container_width=True):
+                    st.session_state[key] = EMPTY if winner == team else team
+                    st.rerun()
+            else:
+                st.markdown(
+                    '<div style="font-size:11px;color:rgba(240,246,252,0.25);'
+                    'text-align:center;padding:6px 0;font-style:italic;">⏳ in attesa</div>',
+                    unsafe_allow_html=True,
+                )
+            if slot == "_a":
+                st.markdown(
+                    '<div style="text-align:center;color:rgba(29,233,182,0.3);'
+                    'font-size:9px;line-height:1;">─ vs ─</div>',
+                    unsafe_allow_html=True,
+                )
+        if winner != EMPTY:
+            st.markdown(
+                f'<div style="text-align:center;font-size:9px;color:#1DE9B6;'
+                f'font-weight:700;margin-top:2px;">✓ {winner}</div>',
+                unsafe_allow_html=True,
+            )
+        st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
+
+    # ── Compute all winners ────────────────────────────────────────────────────
+    r16_w = get_winners("r16", 16)
+    r8_w  = get_winners("r8",  8)
+    qf_w  = get_winners("qf",  4)
+    sf_w  = get_winners("sf",  2)
+
+    # ── Progress banner ───────────────────────────────────────────────────────
+    champ = st.session_state.get("champion", EMPTY)
+    filled_r16 = sum(1 for w in r16_w if w != EMPTY)
+    filled_r8  = sum(1 for w in r8_w  if w != EMPTY)
+    filled_qf  = sum(1 for w in qf_w  if w != EMPTY)
+    filled_sf  = sum(1 for w in sf_w  if w != EMPTY)
     champ_html = (
-        f'<div style="margin-top:10px;text-align:center;padding:10px;'
-        f'background:linear-gradient(135deg,#D4A017,#FFD700);border-radius:10px;">'
-        f'<span style="font-size:20px;">🏆</span>'
-        f'<span style="color:#0A1628;font-size:15px;font-weight:900;margin-left:8px;">'
-        f'{fmt(champ) if champ != EMPTY else "— da definire —"}</span></div>'
+        f'<span style="font-size:18px;">🏆</span>'
+        f'<span style="color:#FFD700;font-weight:900;margin-left:6px;">{fmt(champ)}</span>'
     ) if champ != EMPTY else ""
-
     st.markdown(
-        f'<div style="background:#0A1628;border-radius:14px;padding:16px 18px;'
-        f'margin-bottom:16px;border:2px solid #D4A017;">'
-        f'<div style="color:#FFD700;font-weight:800;font-size:13px;margin-bottom:10px;'
-        f'letter-spacing:1px;">⚔️ STATO TABELLONE</div>'
-        f'{rows_html}{champ_html}</div>',
+        f'<div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;'
+        f'background:#162032;border-radius:12px;padding:12px 16px;margin-bottom:6px;'
+        f'border:1px solid rgba(29,233,182,0.2);">'
+        f'<span style="color:rgba(240,246,252,0.5);font-size:11px;font-weight:600;">PROGRESSO</span>'
+        f'<span style="color:#F0F6FC;font-size:11px;">S16 <b style="color:#1DE9B6">{filled_r16}/16</b></span>'
+        f'<span style="color:#F0F6FC;font-size:11px;">O8 <b style="color:#1DE9B6">{filled_r8}/8</b></span>'
+        f'<span style="color:#F0F6FC;font-size:11px;">QF <b style="color:#1DE9B6">{filled_qf}/4</b></span>'
+        f'<span style="color:#F0F6FC;font-size:11px;">SF <b style="color:#1DE9B6">{filled_sf}/2</b></span>'
+        f'{champ_html}</div>',
         unsafe_allow_html=True,
     )
+    if len(thirds_pool) < 8:
+        st.info(f"⚠️ Seleziona le 8 migliori terze nel tab Gironi ({len(thirds_pool)}/8 scelte) "
+                f"per completare i Sedicesimi.")
 
-    # ── Sedicesimi ───────────────────────────────────────────────────────────
-    with st.expander("⚔️  Sedicesimi di Finale  (32 → 16)", expanded=True):
-        st.caption("Scegli il vincitore di ogni partita.")
-        left, right = st.columns(2)
-        for idx, s1, s2, venue in R16:
-            t1 = slot_team(s1)
-            t2 = slot_team(s2)
-            col = left if idx < 8 else right
-            with col:
-                match_widget(
-                    f"r16_{idx}", venue, t1, t2,
-                    thirds_pool if s2 == "3?" else None,
-                )
-                st.markdown("")
+    # ── SEDICESIMI ────────────────────────────────────────────────────────────
+    st.markdown(_stage_hdr("⚔️  SEDICESIMI DI FINALE  ·  32 → 16"), unsafe_allow_html=True)
+    left, right = st.columns(2)
+    for idx, s1, s2, venue in R16:
+        t1 = slot_team(s1)
+        t2 = third_for(idx) if s2 == "3?" else slot_team(s2)
+        col = left if idx < 8 else right
+        with col:
+            mk(f"r16_{idx}", t1, t2, venue)
 
-    # ── Ottavi ──────────────────────────────────────────────────────────────
-    r16_w = get_winners("r16", 16)
-    with st.expander("🔥  Ottavi di Finale  (16 → 8)", expanded=False):
-        st.caption("Popola i Sedicesimi prima per vedere i nomi automaticamente.")
-        left, right = st.columns(2)
-        for idx, a, b, venue in R8:
-            t1 = r16_w[a] if r16_w[a] != EMPTY else f"Vinc. S{a+1}"
-            t2 = r16_w[b] if r16_w[b] != EMPTY else f"Vinc. S{b+1}"
-            opts = dedup([EMPTY, t1, t2])
-            curr = st.session_state.get(f"r8_{idx}", EMPTY)
-            if curr not in opts:
-                curr = EMPTY
-            col = left if idx < 4 else right
-            with col:
-                c1, c2 = st.columns([4, 2])
-                with c1:
-                    st.caption(f"📍 {venue}")
-                    st.markdown(f"**{fmt(t1)}** vs **{fmt(t2)}**")
-                with c2:
-                    st.selectbox(
-                        "Vinc.", opts,
-                        index=opts.index(curr),
-                        key=f"r8_{idx}",
-                        label_visibility="collapsed",
-                        format_func=fmt,
-                    )
-                st.markdown("")
+    # ── OTTAVI ────────────────────────────────────────────────────────────────
+    st.markdown(_stage_hdr("🔥  OTTAVI DI FINALE  ·  16 → 8"), unsafe_allow_html=True)
+    left, right = st.columns(2)
+    for idx, a, b, venue in R8:
+        t1 = r16_w[a] if r16_w[a] != EMPTY else None
+        t2 = r16_w[b] if r16_w[b] != EMPTY else None
+        col = left if idx < 4 else right
+        with col:
+            mk(f"r8_{idx}", t1, t2, venue)
 
-    # ── Quarti ──────────────────────────────────────────────────────────────
-    r8_w = get_winners("r8", 8)
-    with st.expander("⚡  Quarti di Finale  (8 → 4)", expanded=False):
-        cols = st.columns(2)
-        for idx, a, b, venue in QF:
-            t1 = r8_w[a] if r8_w[a] != EMPTY else f"Vinc. O{a+1}"
-            t2 = r8_w[b] if r8_w[b] != EMPTY else f"Vinc. O{b+1}"
-            opts = dedup([EMPTY, t1, t2])
-            curr = st.session_state.get(f"qf_{idx}", EMPTY)
-            if curr not in opts:
-                curr = EMPTY
-            with cols[idx % 2]:
-                c1, c2 = st.columns([4, 2])
-                with c1:
-                    st.caption(f"📍 {venue}")
-                    st.markdown(f"**{fmt(t1)}** vs **{fmt(t2)}**")
-                with c2:
-                    st.selectbox(
-                        "Vinc.", opts,
-                        index=opts.index(curr),
-                        key=f"qf_{idx}",
-                        label_visibility="collapsed",
-                        format_func=fmt,
-                    )
-                st.markdown("")
+    # ── QUARTI ────────────────────────────────────────────────────────────────
+    st.markdown(_stage_hdr("⚡  QUARTI DI FINALE  ·  8 → 4"), unsafe_allow_html=True)
+    qf_cols = st.columns(2)
+    for idx, a, b, venue in QF:
+        t1 = r8_w[a] if r8_w[a] != EMPTY else None
+        t2 = r8_w[b] if r8_w[b] != EMPTY else None
+        with qf_cols[idx % 2]:
+            mk(f"qf_{idx}", t1, t2, venue)
 
-    # ── Semifinali ──────────────────────────────────────────────────────────
-    qf_w = get_winners("qf", 4)
-    with st.expander("🌟  Semifinali  (4 → 2)", expanded=False):
-        cols = st.columns(2)
-        for idx, a, b, venue in SF:
-            t1 = qf_w[a] if qf_w[a] != EMPTY else f"Vinc. Q{a+1}"
-            t2 = qf_w[b] if qf_w[b] != EMPTY else f"Vinc. Q{b+1}"
-            opts = dedup([EMPTY, t1, t2])
-            curr = st.session_state.get(f"sf_{idx}", EMPTY)
-            if curr not in opts:
-                curr = EMPTY
-            with cols[idx]:
-                c1, c2 = st.columns([4, 2])
-                with c1:
-                    st.caption(f"📍 {venue}")
-                    st.markdown(f"**{fmt(t1)}** vs **{fmt(t2)}**")
-                with c2:
-                    st.selectbox(
-                        "Vinc.", opts,
-                        index=opts.index(curr),
-                        key=f"sf_{idx}",
-                        label_visibility="collapsed",
-                        format_func=fmt,
-                    )
-                st.markdown("")
+    # ── SEMIFINALI ────────────────────────────────────────────────────────────
+    st.markdown(_stage_hdr("🌟  SEMIFINALI  ·  4 → 2"), unsafe_allow_html=True)
+    sf_cols = st.columns(2)
+    for idx, a, b, venue in SF:
+        t1 = qf_w[a] if qf_w[a] != EMPTY else None
+        t2 = qf_w[b] if qf_w[b] != EMPTY else None
+        with sf_cols[idx]:
+            mk(f"sf_{idx}", t1, t2, venue)
 
-    # ── Finali ──────────────────────────────────────────────────────────────
-    sf_w = get_winners("sf", 2)
-    with st.expander("🏆  Finali", expanded=True):
-        col_f, col_3 = st.columns(2)
+    # ── FINALI ────────────────────────────────────────────────────────────────
+    st.markdown(_stage_hdr("🏆  FINALE  ·  19 luglio · MetLife Stadium"), unsafe_allow_html=True)
+    fin_l, fin_r = st.columns(2)
 
-        ft1 = sf_w[0] if sf_w[0] != EMPTY else "Vinc. SF1"
-        ft2 = sf_w[1] if sf_w[1] != EMPTY else "Vinc. SF2"
-        fopts = dedup([EMPTY, ft1, ft2])
-        fcurr = st.session_state.get("champion", EMPTY)
-        if fcurr not in fopts:
-            fcurr = EMPTY
-        with col_f:
-            st.markdown("**🏆 FINALE** · 19 luglio · MetLife Stadium, New Jersey")
-            c1, c2 = st.columns([4, 2])
-            with c1:
-                st.markdown(f"**{fmt(ft1)}** vs **{fmt(ft2)}**")
-            with c2:
-                st.selectbox(
-                    "Campione", fopts,
-                    index=fopts.index(fcurr),
-                    key="champion",
-                    label_visibility="collapsed",
-                    format_func=fmt,
-                )
+    with fin_l:
+        st.markdown(
+            '<div style="font-size:12px;color:#FFD700;font-weight:800;'
+            'margin-bottom:6px;letter-spacing:1px;">🏆 CAMPIONE DEL MONDO</div>',
+            unsafe_allow_html=True,
+        )
+        ft1 = sf_w[0] if sf_w[0] != EMPTY else None
+        ft2 = sf_w[1] if sf_w[1] != EMPTY else None
+        mk("champion", ft1, ft2, "19 lug · MetLife Stadium, New Jersey")
 
+    with fin_r:
+        st.markdown(
+            '<div style="font-size:12px;color:#CD7F32;font-weight:800;'
+            'margin-bottom:6px;letter-spacing:1px;">🥉 FINALE TERZO POSTO</div>',
+            unsafe_allow_html=True,
+        )
         l1 = sf_loser(0)
         l2 = sf_loser(1)
-        t3opts = dedup([EMPTY, l1, l2])
-        t3curr = st.session_state.get("third_pl", EMPTY)
-        if t3curr not in t3opts:
-            t3curr = EMPTY
-        with col_3:
-            st.markdown("**🥉 FINALE 3° POSTO** · 18 luglio · Miami")
-            c1, c2 = st.columns([4, 2])
-            with c1:
-                st.markdown(f"**{fmt(l1)}** vs **{fmt(l2)}**")
-            with c2:
-                st.selectbox(
-                    "3° posto", t3opts,
-                    index=t3opts.index(t3curr),
-                    key="third_pl",
-                    label_visibility="collapsed",
-                    format_func=fmt,
-                )
+        mk("third_pl",
+           l1 if not l1.startswith("Perdente") else None,
+           l2 if not l2.startswith("Perdente") else None,
+           "18 lug · Miami")
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # TAB 3 — PREMI
