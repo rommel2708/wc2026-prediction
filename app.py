@@ -174,7 +174,7 @@ EMPTY = "— scegli —"
 FLAGS = {
     'Messico': '🇲🇽', 'Sudafrica': '🇿🇦', 'Corea del Sud': '🇰🇷', 'Rep. Ceca': '🇨🇿',
     'Canada': '🇨🇦', 'Bosnia': '🇧🇦', 'Qatar': '🇶🇦', 'Svizzera': '🇨🇭',
-    'Brasile': '🇧🇷', 'Marocco': '🇲🇦', 'Haiti': '🇭🇹', 'Scozia': 'SC',
+    'Brasile': '🇧🇷', 'Marocco': '🇲🇦', 'Haiti': '🇭🇹', 'Scozia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
     'USA': '🇺🇸', 'Paraguay': '🇵🇾', 'Australia': '🇦🇺', 'Turchia': '🇹🇷',
     'Germania': '🇩🇪', 'Curaçao': '🇨🇼', "Costa d'Avorio": '🇨🇮', 'Ecuador': '🇪🇨',
     'Olanda': '🇳🇱', 'Giappone': '🇯🇵', 'Svezia': '🇸🇪', 'Tunisia': '🇹🇳',
@@ -183,7 +183,7 @@ FLAGS = {
     'Francia': '🇫🇷', 'Senegal': '🇸🇳', 'Iraq': '🇮🇶', 'Norvegia': '🇳🇴',
     'Argentina': '🇦🇷', 'Algeria': '🇩🇿', 'Austria': '🇦🇹', 'Giordania': '🇯🇴',
     'Portogallo': '🇵🇹', 'RD Congo': '🇨🇩', 'Uzbekistan': '🇺🇿', 'Colombia': '🇨🇴',
-    'Inghilterra': 'IN', 'Croazia': '🇭🇷', 'Ghana': '🇬🇭', 'Panama': '🇵🇦',
+    'Inghilterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Croazia': '🇭🇷', 'Ghana': '🇬🇭', 'Panama': '🇵🇦',
 }
 
 
@@ -875,7 +875,7 @@ def pill(ax, x, y, w, h, text, color=IMG_TEXT, bg=IMG_CARD, border=IMG_LINE,
                 fontsize=fontsize, color=IMG_MUTED, zorder=3)
 
 
-def generate_image() -> bytes:
+def generate_image(output_format: str = "jpeg") -> bytes:
     r16_win = get_winners("r16", 16)
     r8_win  = get_winners("r8", 8)
     qf_win  = get_winners("qf", 4)
@@ -1016,7 +1016,7 @@ def generate_image() -> bytes:
     ax_f.plot([0.1, 0.9], [0.9, 0.9], color=IMG_LINE, lw=0.5)
 
     buf = io.BytesIO()
-    fig.savefig(buf, format='png', dpi=140, bbox_inches='tight', facecolor=IMG_BG)
+    fig.savefig(buf, format=output_format, dpi=140, bbox_inches='tight', facecolor=IMG_BG)
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()
@@ -1029,35 +1029,99 @@ with tab_s:
     st.subheader("📸 Salva la tua Prediction")
     st.caption("Genera l'immagine e scaricala per condividerla su LinkedIn o Instagram.")
 
-    champion = st.session_state.get("champion", EMPTY)
-    third_pl = st.session_state.get("third_pl", EMPTY)
-    bp       = st.session_state.get("best_player", EMPTY)
-    ts       = st.session_state.get("top_scorer", EMPTY)
-    bu       = st.session_state.get("best_u23", EMPTY)
+    # ── Gather results ─────────────────────────────────────────────
+    _sf_w     = get_winners("sf", 2)
+    champion  = st.session_state.get("champion", EMPTY)
+    third_pl  = st.session_state.get("third_pl", EMPTY)
+    runner_up = next((t for t in _sf_w if t != EMPTY and t != champion), EMPTY)
+    bp        = st.session_state.get("best_player", EMPTY)
+    ts        = st.session_state.get("top_scorer", EMPTY)
+    bu        = st.session_state.get("best_u23", EMPTY)
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("🏆 Campione del Mondo", fmt(champion) if champion != EMPTY else "—")
-        st.metric("🥉 3° Posto", fmt(third_pl) if third_pl != EMPTY else "—")
-    with c2:
+    def _pn(team):
+        if team == EMPTY:
+            return "—"
+        f = FLAGS.get(team, "")
+        return f"{f} {team}" if f else team
+
+    # ── Podio ──────────────────────────────────────────────────────
+    st.markdown(
+        f"""
+        <div style="display:flex;align-items:flex-end;justify-content:center;
+                    gap:10px;margin:28px 0 20px;">
+          <div style="text-align:center;flex:1;">
+            <div style="font-size:30px;margin-bottom:6px;">🥈</div>
+            <div style="font-size:14px;font-weight:700;color:#e0e0e0;
+                        margin-bottom:10px;min-height:42px;">{_pn(runner_up)}</div>
+            <div style="background:linear-gradient(160deg,#6b6b6b,#c0c0c0);
+                        border-radius:10px 10px 0 0;height:90px;
+                        display:flex;align-items:center;justify-content:center;">
+              <span style="color:#fff;font-size:26px;font-weight:900;">2°</span>
+            </div>
+          </div>
+          <div style="text-align:center;flex:1;">
+            <div style="font-size:38px;margin-bottom:6px;">🏆</div>
+            <div style="font-size:16px;font-weight:900;color:#FFD700;
+                        margin-bottom:10px;min-height:42px;">{_pn(champion)}</div>
+            <div style="background:linear-gradient(160deg,#a07800,#FFD700);
+                        border-radius:10px 10px 0 0;height:140px;
+                        display:flex;align-items:center;justify-content:center;
+                        box-shadow:0 0 24px rgba(255,215,0,0.45);">
+              <span style="color:#0A1628;font-size:34px;font-weight:900;">1°</span>
+            </div>
+          </div>
+          <div style="text-align:center;flex:1;">
+            <div style="font-size:30px;margin-bottom:6px;">🥉</div>
+            <div style="font-size:14px;font-weight:700;color:#c8986a;
+                        margin-bottom:10px;min-height:42px;">{_pn(third_pl)}</div>
+            <div style="background:linear-gradient(160deg,#5c3410,#cd7f32);
+                        border-radius:10px 10px 0 0;height:60px;
+                        display:flex;align-items:center;justify-content:center;">
+              <span style="color:#fff;font-size:22px;font-weight:900;">3°</span>
+            </div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # ── Premi individuali ──────────────────────────────────────────
+    st.markdown(
+        '<div style="text-align:center;color:#1DE9B6;font-weight:800;font-size:12px;'
+        'letter-spacing:1.5px;margin-bottom:14px;">🌟  PREMI INDIVIDUALI</div>',
+        unsafe_allow_html=True,
+    )
+    a1, a2, a3 = st.columns(3)
+    with a1:
         st.metric("🏅 Miglior Giocatore", bp if bp != EMPTY else "—")
+    with a2:
         st.metric("⚽ Capocannoniere", ts if ts != EMPTY else "—")
-    with c3:
+    with a3:
         st.metric("🌱 Miglior U23", bu if bu != EMPTY else "—")
-        thirds_ok = len([t for t in st.session_state.get("thirds", []) if t != EMPTY])
-        st.metric("🥉 Terze qualificate", f"{thirds_ok}/8")
 
     st.divider()
 
     if st.button("🎨 Genera Immagine", type="primary", use_container_width=True):
         with st.spinner("Generando l'immagine..."):
-            img_bytes = generate_image()
-        st.image(img_bytes, use_container_width=True)
-        st.download_button(
-            label="⬇️  Scarica PNG",
-            data=img_bytes,
-            file_name="wc2026_my_prediction.png",
-            mime="image/png",
-            use_container_width=True,
-        )
+            st.session_state["_img_jpg"] = generate_image("jpeg")
+            st.session_state["_img_pdf"] = generate_image("pdf")
+
+    if "_img_jpg" in st.session_state:
+        dl1, dl2 = st.columns(2)
+        with dl1:
+            st.download_button(
+                label="⬇️  Scarica JPG",
+                data=st.session_state["_img_jpg"],
+                file_name="wc2026_my_prediction.jpg",
+                mime="image/jpeg",
+                use_container_width=True,
+            )
+        with dl2:
+            st.download_button(
+                label="📄  Scarica PDF",
+                data=st.session_state["_img_pdf"],
+                file_name="wc2026_my_prediction.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
         st.success("✅ Pronta! Condividi con l'hashtag #WorldCup2026 #FIFA2026")
