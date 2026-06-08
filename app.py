@@ -174,7 +174,7 @@ EMPTY = "— scegli —"
 FLAGS = {
     'Messico': '🇲🇽', 'Sudafrica': '🇿🇦', 'Corea del Sud': '🇰🇷', 'Rep. Ceca': '🇨🇿',
     'Canada': '🇨🇦', 'Bosnia': '🇧🇦', 'Qatar': '🇶🇦', 'Svizzera': '🇨🇭',
-    'Brasile': '🇧🇷', 'Marocco': '🇲🇦', 'Haiti': '🇭🇹', 'Scozia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+    'Brasile': '🇧🇷', 'Marocco': '🇲🇦', 'Haiti': '🇭🇹', 'Scozia': '🇬🇧',
     'USA': '🇺🇸', 'Paraguay': '🇵🇾', 'Australia': '🇦🇺', 'Turchia': '🇹🇷',
     'Germania': '🇩🇪', 'Curaçao': '🇨🇼', "Costa d'Avorio": '🇨🇮', 'Ecuador': '🇪🇨',
     'Olanda': '🇳🇱', 'Giappone': '🇯🇵', 'Svezia': '🇸🇪', 'Tunisia': '🇹🇳',
@@ -223,6 +223,9 @@ def fmt(team: str) -> str:
     return f"{f} {team}" if f else team
 
 
+# team → group letter (derived from GROUPS below, used for thirds seeding)
+TEAM_GROUP: dict = {}
+
 GROUPS = {
     'A': ['Messico', 'Sudafrica', 'Corea del Sud', 'Rep. Ceca'],
     'B': ['Canada', 'Qatar', 'Svizzera', 'Bosnia'],
@@ -237,6 +240,56 @@ GROUPS = {
     'K': ['Portogallo', 'RD Congo', 'Uzbekistan', 'Colombia'],
     'L': ['Inghilterra', 'Croazia', 'Ghana', 'Panama'],
 }
+
+# Build reverse mapping team → group
+TEAM_GROUP.update({t: g for g, teams in GROUPS.items() for t in teams})
+
+# ── Thirds seeding  (official 2026 WC eligible-groups per "3?" slot) ─────────
+_SLOT_ELIGIBLE = {
+    0:  frozenset('CEFKI'),   # vs 1A  — Mexico City
+    1:  frozenset('BEHIJ'),   # vs 1L  — Atlanta
+    4:  frozenset('DEFHJ'),   # vs 1B  — Vancouver
+    5:  frozenset('AEHIL'),   # vs 1K  — Kansas City
+    8:  frozenset('BCGKL'),   # vs 1D  — San Francisco
+    9:  frozenset('AEFIJ'),   # vs 1G  — Seattle
+    14: frozenset('ABCGJ'),   # vs 1E  — Boston
+    15: frozenset('BCDFL'),   # vs 1I  — New Jersey
+}
+_THIRD_SLOT_ORDER = [0, 1, 4, 5, 8, 9, 14, 15]
+
+
+def compute_thirds_seeding(thirds_pool: list) -> dict:
+    """Assign 8 thirds to R16 slots using official eligible-groups table.
+    Greedy minimum-options-first (most constrained slot assigned first).
+    Returns: {r16_slot_idx: team_name}
+    """
+    if not thirds_pool:
+        return {}
+    q_grps = [TEAM_GROUP.get(t, '') for t in thirds_pool]
+    eligible = {
+        s: _SLOT_ELIGIBLE[s] & frozenset(q_grps)
+        for s in _THIRD_SLOT_ORDER
+    }
+    assignment: dict = {}
+    used: set = set()
+    for _ in range(min(len(thirds_pool), 8)):
+        ranked = sorted(
+            [(len(eligible[s] - used), s) for s in _THIRD_SLOT_ORDER if s not in assignment]
+        )
+        if not ranked:
+            break
+        _, slot = ranked[0]
+        avail = eligible[slot] - used
+        if not avail:
+            avail = frozenset(q_grps) - used
+        if not avail:
+            break
+        grp = sorted(avail)[0]
+        assignment[slot] = grp
+        used.add(grp)
+    grp2team = {TEAM_GROUP.get(t, ''): t for t in thirds_pool}
+    return {s: grp2team[g] for s, g in assignment.items() if g in grp2team}
+
 
 PLAYERS = [
     EMPTY,
@@ -551,15 +604,11 @@ with tab_g:
 with tab_b:
     thirds_pool = [t for t in st.session_state.get("thirds", []) if t != EMPTY][:8]
 
-    # ── Thirds auto-assignment ────────────────────────────────────────────────
-    # R16 indices that have "3?" (best-third) slots, in bracket order
-    _THIRD_SLOTS = [0, 1, 4, 5, 8, 9, 14, 15]
+    # ── Thirds seeding via official eligible-groups algorithm ─────────────────
+    _seeding = compute_thirds_seeding(thirds_pool)  # {slot_idx: team_name}
 
     def third_for(r16_idx):
-        if r16_idx not in _THIRD_SLOTS:
-            return None
-        pos = _THIRD_SLOTS.index(r16_idx)
-        return thirds_pool[pos] if pos < len(thirds_pool) else None
+        return _seeding.get(r16_idx)  # None if not yet assigned
 
     # ── Match card helper ─────────────────────────────────────────────────────
     def _stage_hdr(title):
@@ -645,14 +694,41 @@ with tab_b:
                 f"per completare i Sedicesimi.")
 
     # ── SEDICESIMI ────────────────────────────────────────────────────────────
+    _SLOT_LEGEND = {
+        0: 'C/E/F/K/I', 1: 'B/E/H/I/J', 4: 'D/E/F/H/J', 5: 'A/E/H/I/L',
+        8: 'B/C/G/K/L', 9: 'A/E/F/I/J', 14: 'A/B/C/G/J', 15: 'B/C/D/F/L',
+    }
+
+    def _div():
+        st.markdown(
+            '<div style="border-top:1px dashed rgba(29,233,182,0.18);margin:2px 0 8px 0;"></div>',
+            unsafe_allow_html=True,
+        )
+
     st.markdown(_stage_hdr("⚔️  SEDICESIMI DI FINALE  ·  32 → 16"), unsafe_allow_html=True)
-    left, right = st.columns(2)
-    for idx, s1, s2, venue in R16:
-        t1 = slot_team(s1)
-        t2 = third_for(idx) if s2 == "3?" else slot_team(s2)
-        col = left if idx < 8 else right
-        with col:
-            mk(f"r16_{idx}", t1, t2, venue)
+    r16_info = {idx: (s1, s2, v) for idx, s1, s2, v in R16}
+    left_col, right_col = st.columns(2)
+
+    # Pairs: each 2 R16 matches feed the same R8 match
+    # Left bracket: (0,1), (2,3), (4,5), (6,7)
+    # Right bracket: (8,9), (10,11), (12,13), (14,15)
+    for li, ri in [(0,8),(1,9),(2,10),(3,11),(4,12),(5,13),(6,14),(7,15)]:
+        for idx, col in [(li, left_col), (ri, right_col)]:
+            s1, s2, venue = r16_info[idx]
+            t1 = slot_team(s1)
+            if s2 == "3?":
+                assigned = third_for(idx)
+                t2 = assigned  # None if not yet assigned
+                caption = f"({_SLOT_LEGEND.get(idx,'')})" if not assigned else ""
+                with col:
+                    mk(f"r16_{idx}", t1, t2,
+                       venue + (f" · 3ª {caption}" if caption else ""))
+            else:
+                with col:
+                    mk(f"r16_{idx}", t1, slot_team(s2), venue)
+        if li in (1, 3, 5):   # after each pair-of-pairs = bracket quarter separator
+            with left_col: _div()
+            with right_col: _div()
 
     # ── OTTAVI ────────────────────────────────────────────────────────────────
     st.markdown(_stage_hdr("🔥  OTTAVI DI FINALE  ·  16 → 8"), unsafe_allow_html=True)
@@ -663,6 +739,8 @@ with tab_b:
         col = left if idx < 4 else right
         with col:
             mk(f"r8_{idx}", t1, t2, venue)
+            if idx in (1, 5):
+                _div()
 
     # ── QUARTI ────────────────────────────────────────────────────────────────
     st.markdown(_stage_hdr("⚡  QUARTI DI FINALE  ·  8 → 4"), unsafe_allow_html=True)
