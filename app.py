@@ -603,191 +603,219 @@ with tab_g:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab_b:
     thirds_pool = [t for t in st.session_state.get("thirds", []) if t != EMPTY][:8]
-
-    # ── Thirds seeding via official eligible-groups algorithm ─────────────────
-    _seeding = compute_thirds_seeding(thirds_pool)  # {slot_idx: team_name}
+    _seeding    = compute_thirds_seeding(thirds_pool)
 
     def third_for(r16_idx):
-        return _seeding.get(r16_idx)  # None if not yet assigned
+        return _seeding.get(r16_idx)
 
-    # ── Match card helper ─────────────────────────────────────────────────────
-    def _stage_hdr(title):
-        return (
-            f'<div style="background:linear-gradient(90deg,rgba(29,233,182,0.15),transparent);'
-            f'border-left:4px solid #1DE9B6;padding:10px 16px;border-radius:0 8px 8px 0;'
-            f'margin:20px 0 10px 0;">'
-            f'<span style="color:#1DE9B6;font-size:13px;font-weight:900;letter-spacing:2px;">'
-            f'{title}</span></div>'
-        )
+    def _sp(px):
+        if px > 0:
+            st.markdown(f'<div style="height:{px}px"></div>', unsafe_allow_html=True)
 
-    def mk(key, t1, t2, venue):
-        """Compact match card: click a team to pick it as winner (click again to deselect)."""
+    def mkc(key, t1, t2, venue=""):
         winner = st.session_state.get(key, EMPTY)
-        valid = [t for t in [t1, t2] if t and t != EMPTY]
+        valid  = [t for t in [t1, t2] if t and t != EMPTY]
         if winner not in valid:
             if winner != EMPTY:
                 st.session_state[key] = EMPTY
             winner = EMPTY
-
-        st.markdown(
-            f'<div style="font-size:9px;color:rgba(29,233,182,0.5);font-weight:600;'
-            f'letter-spacing:0.5px;margin-bottom:1px;">📍 {venue}</div>',
-            unsafe_allow_html=True,
-        )
+        if venue:
+            short_v = venue.split("·")[0].strip()
+            st.markdown(
+                f'<div style="font-size:7px;color:rgba(29,233,182,0.4);'
+                f'text-align:center;margin-bottom:1px;line-height:1.2;">{short_v}</div>',
+                unsafe_allow_html=True,
+            )
         for team, slot in [(t1, "_a"), (t2, "_b")]:
             if team and team != EMPTY:
-                btn_type = "primary" if winner == team else "secondary"
-                if st.button(f"{flag(team)} {team}", key=f"{key}{slot}",
-                             type=btn_type, use_container_width=True):
+                is_w = winner == team
+                nm   = (team[:10] + ".") if len(team) > 11 else team
+                lbl  = f"{flag(team)} {nm}"
+                if st.button(lbl, key=f"{key}{slot}",
+                             type="primary" if is_w else "secondary",
+                             use_container_width=True):
                     st.session_state[key] = EMPTY if winner == team else team
                     st.rerun()
             else:
                 st.markdown(
-                    '<div style="font-size:11px;color:rgba(240,246,252,0.25);'
-                    'text-align:center;padding:6px 0;font-style:italic;">⏳ in attesa</div>',
+                    '<div style="background:rgba(255,255,255,0.03);border:1px dashed '
+                    'rgba(255,255,255,0.1);border-radius:5px;padding:8px 0;'
+                    'text-align:center;font-size:8px;color:rgba(255,255,255,0.2);'
+                    'margin:1px 0;">?</div>',
                     unsafe_allow_html=True,
                 )
-            if slot == "_a":
-                st.markdown(
-                    '<div style="text-align:center;color:rgba(29,233,182,0.3);'
-                    'font-size:9px;line-height:1;">─ vs ─</div>',
-                    unsafe_allow_html=True,
-                )
-        if winner != EMPTY:
-            st.markdown(
-                f'<div style="text-align:center;font-size:9px;color:#1DE9B6;'
-                f'font-weight:700;margin-top:2px;">✓ {winner}</div>',
-                unsafe_allow_html=True,
-            )
-        st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:3px"></div>', unsafe_allow_html=True)
 
-    # ── Compute all winners ────────────────────────────────────────────────────
+    _SLOT_LEGEND = {
+        0:  'C/E/F/K/I', 1:  'B/E/H/I/J',
+        4:  'D/E/F/H/J', 5:  'A/E/H/I/L',
+        8:  'B/C/G/K/L', 9:  'A/E/F/I/J',
+        14: 'A/B/C/G/J', 15: 'B/C/D/F/L',
+    }
+
+    # Compute all winners
     r16_w = get_winners("r16", 16)
-    r8_w  = get_winners("r8",  8)
-    qf_w  = get_winners("qf",  4)
-    sf_w  = get_winners("sf",  2)
+    r8_w  = get_winners("r8",   8)
+    qf_w  = get_winners("qf",   4)
+    sf_w  = get_winners("sf",   2)
 
-    # ── Progress banner ───────────────────────────────────────────────────────
-    champ = st.session_state.get("champion", EMPTY)
+    # Progress banner
+    champ      = st.session_state.get("champion", EMPTY)
     filled_r16 = sum(1 for w in r16_w if w != EMPTY)
     filled_r8  = sum(1 for w in r8_w  if w != EMPTY)
     filled_qf  = sum(1 for w in qf_w  if w != EMPTY)
     filled_sf  = sum(1 for w in sf_w  if w != EMPTY)
     champ_html = (
-        f'<span style="font-size:18px;">🏆</span>'
+        f'<span style="font-size:16px;">🏆</span>'
         f'<span style="color:#FFD700;font-weight:900;margin-left:6px;">{fmt(champ)}</span>'
     ) if champ != EMPTY else ""
     st.markdown(
-        f'<div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;'
-        f'background:#162032;border-radius:12px;padding:12px 16px;margin-bottom:6px;'
+        f'<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;'
+        f'background:#162032;border-radius:10px;padding:10px 14px;margin-bottom:8px;'
         f'border:1px solid rgba(29,233,182,0.2);">'
-        f'<span style="color:rgba(240,246,252,0.5);font-size:11px;font-weight:600;">PROGRESSO</span>'
-        f'<span style="color:#F0F6FC;font-size:11px;">S16 <b style="color:#1DE9B6">{filled_r16}/16</b></span>'
-        f'<span style="color:#F0F6FC;font-size:11px;">O8 <b style="color:#1DE9B6">{filled_r8}/8</b></span>'
-        f'<span style="color:#F0F6FC;font-size:11px;">QF <b style="color:#1DE9B6">{filled_qf}/4</b></span>'
-        f'<span style="color:#F0F6FC;font-size:11px;">SF <b style="color:#1DE9B6">{filled_sf}/2</b></span>'
+        f'<span style="color:rgba(240,246,252,0.45);font-size:10px;font-weight:700;">PROGRESSO</span>'
+        f'<span style="color:#F0F6FC;font-size:10px;">S16 <b style="color:#1DE9B6">{filled_r16}/16</b></span>'
+        f'<span style="color:#F0F6FC;font-size:10px;">R8 <b style="color:#1DE9B6">{filled_r8}/8</b></span>'
+        f'<span style="color:#F0F6FC;font-size:10px;">QF <b style="color:#1DE9B6">{filled_qf}/4</b></span>'
+        f'<span style="color:#F0F6FC;font-size:10px;">SF <b style="color:#1DE9B6">{filled_sf}/2</b></span>'
         f'{champ_html}</div>',
         unsafe_allow_html=True,
     )
     if len(thirds_pool) < 8:
-        st.info(f"⚠️ Seleziona le 8 migliori terze nel tab Gironi ({len(thirds_pool)}/8 scelte) "
-                f"per completare i Sedicesimi.")
+        st.info(f"⚠️ Seleziona le 8 migliori terze nel tab Gironi ({len(thirds_pool)}/8).")
 
-    # ── SEDICESIMI ────────────────────────────────────────────────────────────
-    _SLOT_LEGEND = {
-        0: 'C/E/F/K/I', 1: 'B/E/H/I/J', 4: 'D/E/F/H/J', 5: 'A/E/H/I/L',
-        8: 'B/C/G/K/L', 9: 'A/E/F/I/J', 14: 'A/B/C/G/J', 15: 'B/C/D/F/L',
-    }
-
-    def _div():
-        st.markdown(
-            '<div style="border-top:1px dashed rgba(29,233,182,0.18);margin:2px 0 8px 0;"></div>',
-            unsafe_allow_html=True,
-        )
-
-    st.markdown(_stage_hdr("⚔️  SEDICESIMI DI FINALE  ·  32 → 16"), unsafe_allow_html=True)
-    r16_info = {idx: (s1, s2, v) for idx, s1, s2, v in R16}
-    left_col, right_col = st.columns(2)
-
-    # Pairs: each 2 R16 matches feed the same R8 match
-    # Left bracket: (0,1), (2,3), (4,5), (6,7)
-    # Right bracket: (8,9), (10,11), (12,13), (14,15)
-    for li, ri in [(0,8),(1,9),(2,10),(3,11),(4,12),(5,13),(6,14),(7,15)]:
-        for idx, col in [(li, left_col), (ri, right_col)]:
-            s1, s2, venue = r16_info[idx]
-            t1 = slot_team(s1)
-            if s2 == "3?":
-                assigned = third_for(idx)
-                t2 = assigned  # None if not yet assigned
-                caption = f"({_SLOT_LEGEND.get(idx,'')})" if not assigned else ""
-                with col:
-                    mk(f"r16_{idx}", t1, t2,
-                       venue + (f" · 3ª {caption}" if caption else ""))
-            else:
-                with col:
-                    mk(f"r16_{idx}", t1, slot_team(s2), venue)
-        if li in (1, 3, 5):   # after each pair-of-pairs = bracket quarter separator
-            with left_col: _div()
-            with right_col: _div()
-
-    # ── OTTAVI ────────────────────────────────────────────────────────────────
-    st.markdown(_stage_hdr("🔥  OTTAVI DI FINALE  ·  16 → 8"), unsafe_allow_html=True)
-    left, right = st.columns(2)
-    for idx, a, b, venue in R8:
-        t1 = r16_w[a] if r16_w[a] != EMPTY else None
-        t2 = r16_w[b] if r16_w[b] != EMPTY else None
-        col = left if idx < 4 else right
+    # Stage-label header row
+    _COL_W      = [3, 2.5, 2, 1.8, 2.5, 1.8, 2, 2.5, 3]
+    _HDR_LABELS = [
+        "SEDICESIMI", "OTTAVI", "QUARTI", "SEMIF.", "",
+        "SEMIF.", "QUARTI", "OTTAVI", "SEDICESIMI",
+    ]
+    for col, lbl in zip(st.columns(_COL_W), _HDR_LABELS):
         with col:
-            mk(f"r8_{idx}", t1, t2, venue)
-            if idx in (1, 5):
-                _div()
+            st.markdown(
+                f'<div style="text-align:center;font-size:8px;font-weight:900;'
+                f'color:#1DE9B6;letter-spacing:0.8px;padding:3px 0 4px;'
+                f'border-bottom:2px solid rgba(29,233,182,0.35);margin-bottom:4px;'
+                f'min-height:18px;">{lbl}</div>',
+                unsafe_allow_html=True,
+            )
 
-    # ── QUARTI ────────────────────────────────────────────────────────────────
-    st.markdown(_stage_hdr("⚡  QUARTI DI FINALE  ·  8 → 4"), unsafe_allow_html=True)
-    qf_cols = st.columns(2)
-    for idx, a, b, venue in QF:
-        t1 = r8_w[a] if r8_w[a] != EMPTY else None
-        t2 = r8_w[b] if r8_w[b] != EMPTY else None
-        with qf_cols[idx % 2]:
-            mk(f"qf_{idx}", t1, t2, venue)
+    # Bracket: 9 columns
+    H = 100
+    (c_r16l, c_r8l, c_qfl, c_sfl,
+     c_fin,
+     c_sfr, c_qfr, c_r8r, c_r16r) = st.columns(_COL_W)
 
-    # ── SEMIFINALI ────────────────────────────────────────────────────────────
-    st.markdown(_stage_hdr("🌟  SEMIFINALI  ·  4 → 2"), unsafe_allow_html=True)
-    sf_cols = st.columns(2)
-    for idx, a, b, venue in SF:
-        t1 = qf_w[a] if qf_w[a] != EMPTY else None
-        t2 = qf_w[b] if qf_w[b] != EMPTY else None
-        with sf_cols[idx]:
-            mk(f"sf_{idx}", t1, t2, venue)
+    r16_info = {idx: (s1, s2, v) for idx, s1, s2, v in R16}
 
-    # ── FINALI ────────────────────────────────────────────────────────────────
-    st.markdown(_stage_hdr("🏆  FINALE  ·  19 luglio · MetLife Stadium"), unsafe_allow_html=True)
-    fin_l, fin_r = st.columns(2)
+    def _r16(col, idx):
+        s1, s2, venue = r16_info[idx]
+        t1 = slot_team(s1)
+        if s2 == "3?":
+            assigned = third_for(idx)
+            caption  = f"3ª {_SLOT_LEGEND.get(idx, '')}" if not assigned else ""
+            with col:
+                mkc(f"r16_{idx}", t1, assigned,
+                    venue + (f" · {caption}" if caption else ""))
+        else:
+            with col:
+                mkc(f"r16_{idx}", t1, slot_team(s2), venue)
 
-    with fin_l:
-        st.markdown(
-            '<div style="font-size:12px;color:#FFD700;font-weight:800;'
-            'margin-bottom:6px;letter-spacing:1px;">🏆 CAMPIONE DEL MONDO</div>',
-            unsafe_allow_html=True,
-        )
+    # Left R16 (0-7)
+    for i in range(8):
+        _r16(c_r16l, i)
+
+    # Left R8 (0-3)
+    with c_r8l:
+        _sp(H // 2)
+        for i, (idx, a, b, venue) in enumerate(R8[:4]):
+            t1 = r16_w[a] if r16_w[a] != EMPTY else None
+            t2 = r16_w[b] if r16_w[b] != EMPTY else None
+            mkc(f"r8_{idx}", t1, t2, venue)
+            if i < 3:
+                _sp(H)
+        _sp(H // 2)
+
+    # Left QF (0-1)
+    with c_qfl:
+        _sp(3 * H // 2)
+        for i, (idx, a, b, venue) in enumerate(QF[:2]):
+            t1 = r8_w[a] if r8_w[a] != EMPTY else None
+            t2 = r8_w[b] if r8_w[b] != EMPTY else None
+            mkc(f"qf_{idx}", t1, t2, venue)
+            if i == 0:
+                _sp(3 * H)
+        _sp(3 * H // 2)
+
+    # Left SF (0)
+    with c_sfl:
+        _sp(7 * H // 2)
+        idx0, a0, b0, v0 = SF[0]
+        mkc(f"sf_{idx0}",
+            qf_w[a0] if qf_w[a0] != EMPTY else None,
+            qf_w[b0] if qf_w[b0] != EMPTY else None,
+            v0)
+
+    # FINALE + TERZO POSTO (center)
+    with c_fin:
         ft1 = sf_w[0] if sf_w[0] != EMPTY else None
         ft2 = sf_w[1] if sf_w[1] != EMPTY else None
-        mk("champion", ft1, ft2, "19 lug · MetLife Stadium, New Jersey")
-
-    with fin_r:
+        l1  = sf_loser(0)
+        l2  = sf_loser(1)
+        _sp(7 * H // 2 - 18)
         st.markdown(
-            '<div style="font-size:12px;color:#CD7F32;font-weight:800;'
-            'margin-bottom:6px;letter-spacing:1px;">🥉 FINALE TERZO POSTO</div>',
+            '<div style="text-align:center;background:linear-gradient(150deg,#8a6800,#FFD700);'
+            'border-radius:8px;padding:5px 4px;margin-bottom:5px;">'
+            '<span style="color:#0A1628;font-size:9px;font-weight:900;letter-spacing:1px;">'
+            '🏆 FINALE · 19 LUG</span></div>',
             unsafe_allow_html=True,
         )
-        l1 = sf_loser(0)
-        l2 = sf_loser(1)
-        mk("third_pl",
-           l1 if not l1.startswith("Perdente") else None,
-           l2 if not l2.startswith("Perdente") else None,
-           "18 lug · Miami")
+        mkc("champion", ft1, ft2)
+        st.markdown(
+            '<div style="border-top:1px solid rgba(205,127,50,0.35);margin:8px 0 5px;'
+            'text-align:center;padding-top:5px;font-size:8px;font-weight:700;'
+            'color:#CD7F32;letter-spacing:0.8px;">🏅 TERZO POSTO · 18 LUG</div>',
+            unsafe_allow_html=True,
+        )
+        mkc("third_pl",
+            l1 if not l1.startswith("Perdente") else None,
+            l2 if not l2.startswith("Perdente") else None)
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Right SF (1)
+    with c_sfr:
+        _sp(7 * H // 2)
+        idx1, a1, b1, v1 = SF[1]
+        mkc(f"sf_{idx1}",
+            qf_w[a1] if qf_w[a1] != EMPTY else None,
+            qf_w[b1] if qf_w[b1] != EMPTY else None,
+            v1)
+
+    # Right QF (2-3)
+    with c_qfr:
+        _sp(3 * H // 2)
+        for i, (idx, a, b, venue) in enumerate(QF[2:]):
+            t1 = r8_w[a] if r8_w[a] != EMPTY else None
+            t2 = r8_w[b] if r8_w[b] != EMPTY else None
+            mkc(f"qf_{idx}", t1, t2, venue)
+            if i == 0:
+                _sp(3 * H)
+        _sp(3 * H // 2)
+
+    # Right R8 (4-7)
+    with c_r8r:
+        _sp(H // 2)
+        for i, (idx, a, b, venue) in enumerate(R8[4:]):
+            t1 = r16_w[a] if r16_w[a] != EMPTY else None
+            t2 = r16_w[b] if r16_w[b] != EMPTY else None
+            mkc(f"r8_{idx}", t1, t2, venue)
+            if i < 3:
+                _sp(H)
+        _sp(H // 2)
+
+    # Right R16 (8-15)
+    for i in range(8, 16):
+        _r16(c_r16r, i)
+
 # TAB 3 — PREMI
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab_a:
