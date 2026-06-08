@@ -174,7 +174,7 @@ EMPTY = "— scegli —"
 FLAGS = {
     'Messico': '🇲🇽', 'Sudafrica': '🇿🇦', 'Corea del Sud': '🇰🇷', 'Rep. Ceca': '🇨🇿',
     'Canada': '🇨🇦', 'Bosnia': '🇧🇦', 'Qatar': '🇶🇦', 'Svizzera': '🇨🇭',
-    'Brasile': '🇧🇷', 'Marocco': '🇲🇦', 'Haiti': '🇭🇹', 'Scozia': '🇬🇧',
+    'Brasile': '🇧🇷', 'Marocco': '🇲🇦', 'Haiti': '🇭🇹', 'Scozia': 'SC',
     'USA': '🇺🇸', 'Paraguay': '🇵🇾', 'Australia': '🇦🇺', 'Turchia': '🇹🇷',
     'Germania': '🇩🇪', 'Curaçao': '🇨🇼', "Costa d'Avorio": '🇨🇮', 'Ecuador': '🇪🇨',
     'Olanda': '🇳🇱', 'Giappone': '🇯🇵', 'Svezia': '🇸🇪', 'Tunisia': '🇹🇳',
@@ -183,7 +183,7 @@ FLAGS = {
     'Francia': '🇫🇷', 'Senegal': '🇸🇳', 'Iraq': '🇮🇶', 'Norvegia': '🇳🇴',
     'Argentina': '🇦🇷', 'Algeria': '🇩🇿', 'Austria': '🇦🇹', 'Giordania': '🇯🇴',
     'Portogallo': '🇵🇹', 'RD Congo': '🇨🇩', 'Uzbekistan': '🇺🇿', 'Colombia': '🇨🇴',
-    'Inghilterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Croazia': '🇭🇷', 'Ghana': '🇬🇭', 'Panama': '🇵🇦',
+    'Inghilterra': 'IN', 'Croazia': '🇭🇷', 'Ghana': '🇬🇭', 'Panama': '🇵🇦',
 }
 
 
