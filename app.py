@@ -166,6 +166,19 @@ hr { border-color: rgba(29,233,182,0.2) !important; border-width: 1.5px !importa
 
 /* === ALERTS === */
 [data-baseweb="notification"] { border-radius: 10px !important; }
+
+/* === BRACKET: UNIFORM BUTTON HEIGHT === */
+button[kind="primary"], button[kind="secondary"] {
+    min-height: 36px !important;
+    max-height: 36px !important;
+    height: 36px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 11px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
 </style>""", unsafe_allow_html=True)
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -577,9 +590,7 @@ with tab_g:
     for gi, (grp, t) in enumerate(third_teams_by_grp):
         is_sel = t in st.session_state.get("thirds", [])
         btn_type = "primary" if is_sel else "secondary"
-        check = "✅ " if is_sel else ""
-        emoji = flag(t)
-        label = f"{check}GRP {grp}\n{emoji}  {t}"
+        label = f"{'✓ ' if is_sel else ''}{flag(t)} {t}"
         with cols4[gi % 4]:
             if st.button(label, key=f"third_{grp}", use_container_width=True, type=btn_type):
                 cur = list(st.session_state.get("thirds", []))
@@ -638,10 +649,10 @@ with tab_b:
                     st.rerun()
             else:
                 st.markdown(
-                    '<div style="background:rgba(255,255,255,0.03);border:1px dashed '
-                    'rgba(255,255,255,0.1);border-radius:5px;padding:8px 0;'
-                    'text-align:center;font-size:8px;color:rgba(255,255,255,0.2);'
-                    'margin:1px 0;">?</div>',
+                    '<div style="height:36px;display:flex;align-items:center;'
+                    'justify-content:center;background:rgba(255,255,255,0.03);'
+                    'border:1px dashed rgba(255,255,255,0.1);border-radius:5px;'
+                    'font-size:8px;color:rgba(255,255,255,0.2);margin:1px 0;">?</div>',
                     unsafe_allow_html=True,
                 )
         st.markdown('<div style="height:3px"></div>', unsafe_allow_html=True)
