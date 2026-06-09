@@ -1387,6 +1387,7 @@ with tab_b:
         f'{champ_html}</div>',
         unsafe_allow_html=True,
     )
+    st.caption("Raccomando visione orizzontale se si è da telefono.")
     if len(thirds_pool) < 8:
         st.info(f"⚠️ Seleziona le 8 migliori terze nel tab Gironi ({len(thirds_pool)}/8).")
 
