@@ -715,7 +715,9 @@ with tab_b:
             )
 
     # Bracket: 9 columns
-    H = 100
+    # H must equal the actual rendered height of mkc() for vertical centering to work.
+    # mkc = venue(~10px) + 2 slots(~36px+margin each) + bottom spacer = ~90px
+    H = 90
     (c_r16l, c_r8l, c_qfl, c_sfl,
      c_fin,
      c_sfr, c_qfr, c_r8r, c_r16r) = st.columns(_COL_W)
