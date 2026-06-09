@@ -1741,10 +1741,12 @@ def generate_image(output_format: str = "jpeg") -> bytes:
             ] if os.path.exists(p)
         )
         _ld = _np.array(_PILImage.open(_lp).convert("RGBA"), dtype=_np.uint8)
-        # Rimuovi sfondo bianco (margini PNG) e sfondo nero (cifra "26")
-        _ld[(_ld[:,:,0] > 220) & (_ld[:,:,1] > 220) & (_ld[:,:,2] > 220), 3] = 0
-        _ld[(_ld[:,:,0] < 30) & (_ld[:,:,1] < 30) & (_ld[:,:,2] < 30), 3] = 0
-        ax_h.add_artist(AnnotationBbox(OffsetImage(_ld, zoom=0.23), (0.055, 0.52),
+        # Rimuovi solo il bianco (margini PNG) — mantieni le "26"
+        _ld[(_ld[:,:,0] > 215) & (_ld[:,:,1] > 215) & (_ld[:,:,2] > 215), 3] = 0
+        # Converti il nero puro ("26") in oro per renderlo visibile sul banner scuro
+        _dark = (_ld[:,:,0] < 15) & (_ld[:,:,1] < 15) & (_ld[:,:,2] < 15)
+        _ld[_dark, 0] = 240; _ld[_dark, 1] = 178; _ld[_dark, 2] = 36
+        ax_h.add_artist(AnnotationBbox(OffsetImage(_ld, zoom=0.42), (0.060, 0.50),
                                        frameon=False, zorder=4))
     except Exception:
         pass
