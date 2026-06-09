@@ -1859,13 +1859,19 @@ def generate_image(output_format: str = "jpeg") -> bytes:
             _place_flag(ax_aw, nat, (xi, 0.18), zoom=0.50)
 
     # ── Footer ────────────────────────────────────────────────
-    ax_f = fig.add_axes([0, 0, 1, 0.033])
+    ax_f = fig.add_axes([0, 0, 1, 0.050])
     ax_f.set_facecolor(IMG_BG)
     ax_f.axis('off')
-    ax_f.text(0.5, 0.55,
+    ax_f.plot([0.05, 0.95], [0.97, 0.97], color=IMG_TEAL, lw=0.5, alpha=0.4)
+    ax_f.text(0.5, 0.78,
               'FIFA World Cup 2026  \xb7  USA \xb7 Canada \xb7 Messico  \xb7  11 giu – 19 lug 2026',
               ha='center', va='center', fontsize=8.5, color=IMG_MUTED)
-    ax_f.plot([0.05, 0.95], [0.92, 0.92], color=IMG_TEAL, lw=0.5, alpha=0.4)
+    ax_f.text(0.5, 0.47,
+              'Made by R.A.Frisoli  \xb7  Match & Data Analyst',
+              ha='center', va='center', fontsize=9, color=IMG_TEAL, fontweight='bold')
+    ax_f.text(0.5, 0.17,
+              'wc2026-prediction.streamlit.app',
+              ha='center', va='center', fontsize=8, color=IMG_MUTED)
 
     buf = io.BytesIO()
     fig.savefig(buf, format=output_format, dpi=150, bbox_inches='tight', facecolor=IMG_BG)
