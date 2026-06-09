@@ -1715,11 +1715,14 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     fig = plt.figure(figsize=(18, 29), facecolor=IMG_BG)
 
     # ── Attribution strip ────────────────────────────────────
-    ax_att = fig.add_axes([0, 0.972, 1, 0.028])
+    ax_att = fig.add_axes([0, 0.965, 1, 0.035])
     ax_att.set_facecolor('#0d1e34'); ax_att.axis('off')
-    ax_att.text(0.5, 0.5, 'Made by R.A.Frisoli  \xb7  Match & Data Analyst',
+    ax_att.text(0.5, 0.72, 'Made by R.A.Frisoli  \xb7  Match & Data Analyst',
                 ha='center', va='center', fontsize=9, fontweight='bold',
                 color=IMG_TEAL, transform=ax_att.transAxes)
+    ax_att.text(0.5, 0.25, 'prediction-wc2026.streamlit.app',
+                ha='center', va='center', fontsize=8,
+                color=IMG_GOLD, transform=ax_att.transAxes)
 
     # ── Header banner (fedele all'immagine: navy + bordo oro + logo + titolo + sottotitolo) ──
     ax_h = fig.add_axes([0.008, 0.904, 0.984, 0.066])
@@ -1746,8 +1749,8 @@ def generate_image(output_format: str = "jpeg") -> bytes:
         # Converti il nero puro ("26") in oro per renderlo visibile sul banner scuro
         _dark = (_ld[:,:,0] < 15) & (_ld[:,:,1] < 15) & (_ld[:,:,2] < 15)
         _ld[_dark, 0] = 240; _ld[_dark, 1] = 178; _ld[_dark, 2] = 36
-        ax_h.add_artist(AnnotationBbox(OffsetImage(_ld, zoom=0.42), (0.060, 0.50),
-                                       frameon=False, zorder=4))
+        ax_h.add_artist(AnnotationBbox(OffsetImage(_ld, zoom=0.09), (0.060, 0.50),
+                                       frameon=False, zorder=4, clip_on=True))
     except Exception:
         pass
     # Titolo e sottotitolo centrati (x=0.50)
