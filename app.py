@@ -230,8 +230,9 @@ def flag_img(team: str, size: int = 24) -> str:
     code = FLAG_CODES.get(team, '')
     if not code:
         return f'<span style="font-size:{size}px;">{FLAGS.get(team, "")}</span>'
-    return (f'<img src="https://flagcdn.com/w40/{code}.png" height="{size}" '
-            f'style="border-radius:2px;vertical-align:middle;" '
+    return (f'<img src="https://flagcdn.com/w40/{code}.png" '
+            f'style="height:{size}px;width:auto;max-width:{size*2}px;object-fit:contain;'
+            f'border-radius:2px;vertical-align:middle;" '
             f'onerror="this.replaceWith(document.createTextNode(\'{FLAGS.get(team, "")}\')">')
 
 
@@ -1645,20 +1646,28 @@ _IMG_FLAG_CACHE: dict = {}
 
 def _flag_arr(team: str):
     """Download flag PNG from flagcdn.com as RGBA numpy array (cached)."""
-    if team in _IMG_FLAG_CACHE:
+    if team in _IMG_FLAG_CACHE and _IMG_FLAG_CACHE[team] is not None:
         return _IMG_FLAG_CACHE[team]
     code = FLAG_CODES.get(team, '')
     arr = None
     if code:
         try:
             url = f"https://flagcdn.com/w80/{code}.png"
-            with _urlreq.urlopen(url, timeout=5) as r:
+            with _urlreq.urlopen(url, timeout=8) as r:
                 from PIL import Image as _PILImage
                 img = _PILImage.open(io.BytesIO(r.read())).convert('RGBA')
                 arr = _np.array(img)
+            # Pad flags shorter than 42px (es. Qatar 80x31) per allinearle visivamente
+            if arr is not None and arr.shape[0] < 42:
+                from PIL import Image as _PILImage
+                pad = 42 - arr.shape[0]
+                padded = _PILImage.new('RGBA', (arr.shape[1], 42), (0, 0, 0, 0))
+                padded.paste(_PILImage.fromarray(arr), (0, pad // 2))
+                arr = _np.array(padded)
         except Exception:
             arr = None
-    _IMG_FLAG_CACHE[team] = arr
+    if arr is not None:
+        _IMG_FLAG_CACHE[team] = arr
     return arr
 
 
@@ -1721,27 +1730,34 @@ def generate_image(output_format: str = "jpeg") -> bytes:
         boxstyle="round,pad=0.015",
         facecolor='none', edgecolor=IMG_GOLD,
         linewidth=2.6, zorder=5, transform=ax_h.transAxes, clip_on=False))
-    # Logo trofeo
+    # Logo trofeo (prova prima .png poi .webp)
     try:
         from PIL import Image as _PILImage
-        _lp = os.path.join(os.path.dirname(__file__), "assets", "wc2026_logo.webp")
+        _assets = os.path.join(os.path.dirname(__file__), "assets")
+        _lp = next(
+            p for p in [
+                os.path.join(_assets, "wc2026_logo.png"),
+                os.path.join(_assets, "wc2026_logo.webp"),
+            ] if os.path.exists(p)
+        )
         _ld = _np.array(_PILImage.open(_lp).convert("RGBA"), dtype=_np.uint8)
-        _ld[(_ld[:,:,0] < 35) & (_ld[:,:,1] < 35) & (_ld[:,:,2] < 35), 3] = 0
+        # Rimuove sfondo near-black (adatto sia al vecchio webp che al nuovo png)
+        _ld[(_ld[:,:,0] < 40) & (_ld[:,:,1] < 40) & (_ld[:,:,2] < 40), 3] = 0
         ax_h.add_artist(AnnotationBbox(OffsetImage(_ld, zoom=0.23), (0.055, 0.54),
                                        frameon=False, zorder=4))
-        _tx = 0.58
+        _logo_ok = True
     except Exception:
-        _tx = 0.50
+        _logo_ok = False
     # "FIFA" sotto il logo
-    ax_h.text(0.055, 0.06, 'FIFA', ha='center', va='bottom',
-              fontsize=7, fontweight='black', color=IMG_GOLD,
-              transform=ax_h.transAxes, zorder=4)
-    # Titolo principale (oro, bold)
-    ax_h.text(_tx, 0.64, 'FIFA WORLD CUP 2026', ha='center', va='center',
+    if _logo_ok:
+        ax_h.text(0.055, 0.06, 'FIFA', ha='center', va='bottom',
+                  fontsize=7, fontweight='black', color=IMG_GOLD,
+                  transform=ax_h.transAxes, zorder=4)
+    # Titolo e sottotitolo CENTRATI sulla pagina
+    ax_h.text(0.50, 0.64, 'FIFA WORLD CUP 2026', ha='center', va='center',
               fontsize=21, fontweight='black', color=IMG_GOLD,
               transform=ax_h.transAxes, zorder=4)
-    # Sottotitolo (grigio, come nell'immagine)
-    ax_h.text(_tx, 0.24,
+    ax_h.text(0.50, 0.24,
               'USA \xb7 Canada \xb7 Messico  |  11 giugno – 19 luglio 2026  |  48 squadre \xb7 104 partite',
               ha='center', va='center', fontsize=8.5, color='#8d9cb8',
               transform=ax_h.transAxes, zorder=4)
@@ -1771,7 +1787,8 @@ def generate_image(output_format: str = "jpeg") -> bytes:
                     fontsize=9, color=POS_C[pos], fontweight='bold')
             _place_flag(ax, team, (0.17, yy), zoom=0.44)
             ax.text(0.30, yy, team[:16], ha='left', va='center',
-                    fontsize=8.5, color=IMG_TEXT if pos < 2 else IMG_MUTED)
+                    fontsize=9, fontweight='bold',
+                    color=IMG_TEXT if pos < 2 else IMG_MUTED)
 
     # ── VERTICAL BRACKET ─────────────────────────────────────
     ax_br = fig.add_axes([0, 0.085, 1, 0.405])
@@ -1796,8 +1813,8 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     CHAMP_TOP = CHAMP_CY + CHAMP_H / 2   # 53.0
     CHAMP_BOT = CHAMP_CY - CHAMP_H / 2   # 43.0
 
-    # Bottom bracket (low y = bottom): SF2→QF2→R8_2→R16_2 going downward
-    Y_SF2, Y_QF2, Y_R8_2, Y_R16_2 = 36.0, 25.5, 14.0, 3.0
+    # Bottom bracket: pill centers spinti verso y=0 per eliminare spazio vuoto
+    Y_SF2, Y_QF2, Y_R8_2, Y_R16_2 = 35.0, 23.5, 12.5, 1.75
 
     # ── Style helpers ────────────────────────────────────────
     def _ps(t, nw):
@@ -1823,15 +1840,13 @@ def generate_image(output_format: str = "jpeg") -> bytes:
             if arr is not None:
                 _place_flag(ax_br, team, (cx-PW/2+1.6, cy), zoom=0.40, zorder=3)
                 ax_br.text(cx-PW/2+3.6, cy, team[:12], ha='left', va='center',
-                           fontsize=7.5, color=col,
-                           fontweight='bold' if bold else 'normal', zorder=3)
+                           fontsize=8, fontweight='bold', color=col, zorder=3)
             else:
                 ax_br.text(cx, cy, team[:13], ha='center', va='center',
-                           fontsize=7.5, color=col,
-                           fontweight='bold' if bold else 'normal', zorder=3)
+                           fontsize=8, fontweight='bold', color=col, zorder=3)
         else:
             ax_br.text(cx, cy, '?', ha='center', va='center',
-                       fontsize=7.5, color=IMG_MUTED, zorder=3)
+                       fontsize=8, color=IMG_MUTED, zorder=3)
 
     def conn_down(xs_from, xs_to, yf_cy, yt_cy):
         yf = yf_cy - PH2; yt = yt_cy + PH2; yb = (yf+yt)/2
@@ -1859,7 +1874,6 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     NW_SFT = nw(sf_win[:1]); NW_SFB = nw(sf_win[1:])
 
     # ── TOP BRACKET ──────────────────────────────────────────
-    slbl(96.5, '▾  SEDICESIMI  ▾', 7.5)
     for xi, t in zip(xs8, r16_win[:8]): dpill(xi, Y_R16, t, _ps(t, NW_R8T))
     conn_down(xs8, xs4, Y_R16, Y_R8)
     slbl(85.5, '▾  OTTAVI  ▾')
@@ -1912,18 +1926,14 @@ def generate_image(output_format: str = "jpeg") -> bytes:
         ax_br.text(rc, CHAMP_CY, '?', ha='center', va='center',
                    fontsize=9, color=IMG_MUTED, zorder=3)
 
-    # ── BOTTOM BRACKET ────────────────────────────────────────
+    # ── BOTTOM BRACKET (niente label: elimina spazio vuoto) ──
     ax_br.plot([50,50],[CHAMP_BOT, Y_SF2+PH2], color=IMG_GOLD, lw=1.2, zorder=1)
-    slbl(41.5, '▴  SEMIFINALI  ▴')
     dpill(xs1[0], Y_SF2, sf_win[1], _ps_sf(sf_win[1]))
     conn_up(xs2, xs1, Y_QF2, Y_SF2)
-    slbl(31.0, '▴  QUARTI  ▴')
     for xi, t in zip(xs2, qf_win[2:]):  dpill(xi, Y_QF2,  t, _ps(t, NW_SFB))
     conn_up(xs4, xs2, Y_R8_2, Y_QF2)
-    slbl(20.0, '▴  OTTAVI  ▴')
     for xi, t in zip(xs4, r8_win[4:]):  dpill(xi, Y_R8_2, t, _ps(t, NW_QFB))
     conn_up(xs8, xs4, Y_R16_2, Y_R8_2)
-    slbl(9.0, '▴  SEDICESIMI  ▴', 7.5)
     for xi, t in zip(xs8, r16_win[8:]): dpill(xi, Y_R16_2, t, _ps(t, NW_R8B))
 
     # ── Awards bar ────────────────────────────────────────────
