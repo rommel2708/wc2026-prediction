@@ -1711,25 +1711,25 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     nat_cc  = st.session_state.get("nat_cc",  EMPTY)
     nat_u23 = st.session_state.get("nat_u23", EMPTY)
 
-    fig = plt.figure(figsize=(18, 32), facecolor=IMG_BG)
+    # (18, 29) ≈ 9:14.5 — leggermente meno di 9:16 ma elimina lo spazio vuoto
+    fig = plt.figure(figsize=(18, 29), facecolor=IMG_BG)
 
     # ── Attribution strip ────────────────────────────────────
-    ax_att = fig.add_axes([0, 0.975, 1, 0.025])
+    ax_att = fig.add_axes([0, 0.972, 1, 0.028])
     ax_att.set_facecolor('#0d1e34'); ax_att.axis('off')
     ax_att.text(0.5, 0.5, 'Made by R.A.Frisoli  \xb7  Match & Data Analyst',
                 ha='center', va='center', fontsize=9, fontweight='bold',
                 color=IMG_TEAL, transform=ax_att.transAxes)
 
     # ── Header banner (fedele all'immagine: navy + bordo oro + logo + titolo + sottotitolo) ──
-    ax_h = fig.add_axes([0.008, 0.916, 0.984, 0.058])
+    ax_h = fig.add_axes([0.008, 0.904, 0.984, 0.066])
     ax_h.set_facecolor('#0d1a2e')
     ax_h.set_xlim(0, 1); ax_h.set_ylim(0, 1); ax_h.axis('off')
-    # Bordo arrotondato oro (come nell'immagine)
     ax_h.add_patch(FancyBboxPatch(
         (0.003, 0.04), 0.994, 0.920,
         boxstyle="round,pad=0.015",
         facecolor='none', edgecolor=IMG_GOLD,
-        linewidth=2.6, zorder=5, transform=ax_h.transAxes, clip_on=False))
+        linewidth=2.8, zorder=5, transform=ax_h.transAxes, clip_on=False))
     # Logo trofeo (prova prima .png poi .webp)
     try:
         from PIL import Image as _PILImage
@@ -1741,30 +1741,25 @@ def generate_image(output_format: str = "jpeg") -> bytes:
             ] if os.path.exists(p)
         )
         _ld = _np.array(_PILImage.open(_lp).convert("RGBA"), dtype=_np.uint8)
-        # Rimuove sfondo near-black (adatto sia al vecchio webp che al nuovo png)
-        _ld[(_ld[:,:,0] < 40) & (_ld[:,:,1] < 40) & (_ld[:,:,2] < 40), 3] = 0
-        ax_h.add_artist(AnnotationBbox(OffsetImage(_ld, zoom=0.23), (0.055, 0.54),
+        # Rimuovi sfondo bianco (margini PNG) e sfondo nero (cifra "26")
+        _ld[(_ld[:,:,0] > 220) & (_ld[:,:,1] > 220) & (_ld[:,:,2] > 220), 3] = 0
+        _ld[(_ld[:,:,0] < 30) & (_ld[:,:,1] < 30) & (_ld[:,:,2] < 30), 3] = 0
+        ax_h.add_artist(AnnotationBbox(OffsetImage(_ld, zoom=0.23), (0.055, 0.52),
                                        frameon=False, zorder=4))
-        _logo_ok = True
     except Exception:
-        _logo_ok = False
-    # "FIFA" sotto il logo
-    if _logo_ok:
-        ax_h.text(0.055, 0.06, 'FIFA', ha='center', va='bottom',
-                  fontsize=7, fontweight='black', color=IMG_GOLD,
-                  transform=ax_h.transAxes, zorder=4)
-    # Titolo e sottotitolo CENTRATI sulla pagina
-    ax_h.text(0.50, 0.64, 'FIFA WORLD CUP 2026', ha='center', va='center',
-              fontsize=21, fontweight='black', color=IMG_GOLD,
+        pass
+    # Titolo e sottotitolo centrati (x=0.50)
+    ax_h.text(0.50, 0.66, 'FIFA WORLD CUP 2026', ha='center', va='center',
+              fontsize=22, fontweight='black', color=IMG_GOLD,
               transform=ax_h.transAxes, zorder=4)
-    ax_h.text(0.50, 0.24,
+    ax_h.text(0.50, 0.26,
               'USA \xb7 Canada \xb7 Messico  |  11 giugno – 19 luglio 2026  |  48 squadre \xb7 104 partite',
-              ha='center', va='center', fontsize=8.5, color='#8d9cb8',
+              ha='center', va='center', fontsize=9, color='#8d9cb8',
               transform=ax_h.transAxes, zorder=4)
 
     # ── Groups: 4 rows \xd7 3 cols (compact) ─────────────────────
     gkeys  = list(GROUPS.keys())
-    g_top, g_bot, gap = 0.914, 0.492, 0.007
+    g_top, g_bot, gap = 0.902, 0.500, 0.007
     col_w  = 1 / 3
     cell_w = col_w - 0.014
     cell_h = (g_top - g_bot) / 4 - gap
@@ -1791,7 +1786,7 @@ def generate_image(output_format: str = "jpeg") -> bytes:
                     color=IMG_TEXT if pos < 2 else IMG_MUTED)
 
     # ── VERTICAL BRACKET ─────────────────────────────────────
-    ax_br = fig.add_axes([0, 0.085, 1, 0.405])
+    ax_br = fig.add_axes([0, 0.104, 1, 0.394])
     ax_br.set_facecolor(IMG_BG); ax_br.set_xlim(0,100); ax_br.set_ylim(0,100)
     ax_br.axis('off')
     ax_br.text(50, 99, 'TABELLONE — FASE AD ELIMINAZIONE DIRETTA',
@@ -1803,20 +1798,16 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     xs2 = [25.0, 75.0]
     xs1 = [50.0]
 
-    # Top bracket (high y = top): R16→R8→QF→SF going downward
     Y_R16, Y_R8, Y_QF, Y_SF = 92.0, 79.5, 68.5, 59.0
 
-    # Champion box
     CHAMP_CY  = 48.0
-    CHAMP_W   = 28.0   # wider to fit champion + 3rd side by side
+    CHAMP_W   = 18.0   # solo campione dentro
     CHAMP_H   = 10.0
     CHAMP_TOP = CHAMP_CY + CHAMP_H / 2   # 53.0
     CHAMP_BOT = CHAMP_CY - CHAMP_H / 2   # 43.0
 
-    # Bottom bracket: pill centers spinti verso y=0 per eliminare spazio vuoto
     Y_SF2, Y_QF2, Y_R8_2, Y_R16_2 = 35.0, 23.5, 12.5, 1.75
 
-    # ── Style helpers ────────────────────────────────────────
     def _ps(t, nw):
         if not t or t == EMPTY: return IMG_CARD, IMG_LINE, 0.5, IMG_MUTED, False
         if nw and t in nw:      return '#152b1c', IMG_TEAL, 1.8, IMG_TEXT, True
@@ -1874,6 +1865,7 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     NW_SFT = nw(sf_win[:1]); NW_SFB = nw(sf_win[1:])
 
     # ── TOP BRACKET ──────────────────────────────────────────
+    slbl(96.5, '▾  SEDICESIMI  ▾', 7.5)
     for xi, t in zip(xs8, r16_win[:8]): dpill(xi, Y_R16, t, _ps(t, NW_R8T))
     conn_down(xs8, xs4, Y_R16, Y_R8)
     slbl(85.5, '▾  OTTAVI  ▾')
@@ -1886,47 +1878,45 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     dpill(xs1[0], Y_SF, sf_win[0], _ps_sf(sf_win[0]))
     ax_br.plot([50,50],[Y_SF-PH2, CHAMP_TOP], color=IMG_GOLD, lw=1.2, zorder=1)
 
-    # ── CHAMPION BOX (champion left, 3° right) ────────────────
+    # ── CHAMPION BOX (solo campione, centrato e grande) ──────
     cx = 50
+    # Riquadro dorato
     ax_br.add_patch(FancyBboxPatch(
         (cx-CHAMP_W/2, CHAMP_BOT), CHAMP_W, CHAMP_H, boxstyle="round,pad=0.3",
-        facecolor='#0f2a1a', edgecolor=IMG_GOLD, linewidth=2.2, zorder=2))
+        facecolor='#0f2a1a', edgecolor=IMG_GOLD, linewidth=2.5, zorder=2))
+    # Glow esterno
     ax_br.add_patch(FancyBboxPatch(
-        (cx-CHAMP_W/2-0.5, CHAMP_BOT-0.5), CHAMP_W+1, CHAMP_H+1,
+        (cx-CHAMP_W/2-0.6, CHAMP_BOT-0.6), CHAMP_W+1.2, CHAMP_H+1.2,
         boxstyle="round,pad=0.3", facecolor='none',
-        edgecolor=IMG_TEAL, linewidth=0.7, alpha=0.3, zorder=1))
-
-    # Divider between champion and 3rd
-    ax_br.plot([cx+0.5, cx+0.5], [CHAMP_BOT+0.8, CHAMP_TOP-0.8],
-               color=IMG_GOLD, lw=0.6, alpha=0.5, zorder=3)
-
-    # Left: CAMPIONE
-    lc = cx - CHAMP_W/4  # = 50 - 7 = 43 (center of left half)
-    ax_br.text(lc, CHAMP_TOP-1.6, 'CAMPIONE', ha='center', va='center',
-               fontsize=7.5, color=IMG_GOLD, fontweight='bold', zorder=3)
+        edgecolor=IMG_GOLD, linewidth=0.5, alpha=0.25, zorder=1))
+    # "CAMPIONE" label centrato in cima al box
+    ax_br.text(cx, CHAMP_TOP-1.5, 'CAMPIONE', ha='center', va='center',
+               fontsize=8, color=IMG_GOLD, fontweight='bold', zorder=3)
+    # Campione: bandiera grande + nome grande, centrati nel box
     cv = champ if champ and champ != EMPTY else None
     if cv:
-        _place_flag(ax_br, cv, (cx-CHAMP_W/2+2.2, CHAMP_CY), zoom=0.52, zorder=3)
-        ax_br.text(cx-CHAMP_W/2+4.2, CHAMP_CY, cv[:10], ha='left', va='center',
-                   fontsize=8.5, color=IMG_GOLD, fontweight='bold', zorder=3)
+        _place_flag(ax_br, cv, (cx-4.0, CHAMP_CY+0.5), zoom=0.60, zorder=3)
+        ax_br.text(cx-1.0, CHAMP_CY+0.5, cv[:12], ha='left', va='center',
+                   fontsize=10, fontweight='black', color=IMG_GOLD, zorder=3)
     else:
-        ax_br.text(lc, CHAMP_CY, '?', ha='center', va='center',
-                   fontsize=10, color=IMG_GOLD, fontweight='bold', zorder=3)
+        ax_br.text(cx, CHAMP_CY, '?', ha='center', va='center',
+                   fontsize=14, color=IMG_GOLD, fontweight='bold', zorder=3)
 
-    # Right: 3° POSTO
-    rc = cx + CHAMP_W/4  # = 57 (center of right half)
-    ax_br.text(rc, CHAMP_TOP-1.6, '3\xb0 POSTO', ha='center', va='center',
-               fontsize=6.5, color=IMG_MUTED, zorder=3)
+    # ── 3° POSTO: fuori dal box, a destra, più piccolo ───────
+    third_cx = cx + CHAMP_W / 2 + 10  # a destra del box
     td = third if third and third != EMPTY else None
+    # Piccolo label "3°" in alto
+    ax_br.text(third_cx, CHAMP_TOP-1.5, '3\xb0 POSTO', ha='center', va='center',
+               fontsize=6, color=IMG_MUTED, zorder=3)
     if td:
-        _place_flag(ax_br, td, (cx+1.2, CHAMP_CY), zoom=0.42, zorder=3)
-        ax_br.text(cx+3.2, CHAMP_CY, td[:10], ha='left', va='center',
-                   fontsize=8, color=IMG_MUTED, fontweight='bold', zorder=3)
+        _place_flag(ax_br, td, (third_cx-2.5, CHAMP_CY+0.5), zoom=0.38, zorder=3)
+        ax_br.text(third_cx, CHAMP_CY+0.5, td[:10], ha='left', va='center',
+                   fontsize=7.5, color=IMG_MUTED, fontweight='bold', zorder=3)
     else:
-        ax_br.text(rc, CHAMP_CY, '?', ha='center', va='center',
-                   fontsize=9, color=IMG_MUTED, zorder=3)
+        ax_br.text(third_cx, CHAMP_CY, '?', ha='center', va='center',
+                   fontsize=8, color=IMG_MUTED, zorder=3)
 
-    # ── BOTTOM BRACKET (niente label: elimina spazio vuoto) ──
+    # ── BOTTOM BRACKET ────────────────────────────────────────
     ax_br.plot([50,50],[CHAMP_BOT, Y_SF2+PH2], color=IMG_GOLD, lw=1.2, zorder=1)
     dpill(xs1[0], Y_SF2, sf_win[1], _ps_sf(sf_win[1]))
     conn_up(xs2, xs1, Y_QF2, Y_SF2)
@@ -1936,32 +1926,33 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     conn_up(xs8, xs4, Y_R16_2, Y_R8_2)
     for xi, t in zip(xs8, r16_win[8:]): dpill(xi, Y_R16_2, t, _ps(t, NW_R8B))
 
-    # ── Awards bar ────────────────────────────────────────────
-    ax_aw = fig.add_axes([0, 0.028, 1, 0.055])
+    # ── Awards bar (più grande e visibile) ───────────────────
+    ax_aw = fig.add_axes([0, 0.022, 1, 0.082])
     ax_aw.set_facecolor(IMG_CARD); ax_aw.set_xlim(0,1); ax_aw.set_ylim(0,1); ax_aw.axis('off')
-    ax_aw.plot([0,1],[0.97,0.97], color=IMG_TEAL, lw=2)
+    ax_aw.plot([0,1],[0.97,0.97], color=IMG_TEAL, lw=2.5)
     for i, (lbl, val, nat) in enumerate([
         ("MIGLIOR GIOCATORE", bp, nat_mg),
         ("CAPOCANNONIERE",    ts, nat_cc),
         ("MIGLIOR UNDER 23",  bu, nat_u23),
     ]):
-        xi = (i+0.5)/3
-        ax_aw.text(xi, 0.82, lbl, ha='center', va='center',
-                   fontsize=8.5, color=IMG_TEAL, fontweight='bold')
-        ax_aw.text(xi, 0.52, (val if val and val != EMPTY else '—')[:28],
-                   ha='center', va='center', fontsize=10, color=IMG_TEXT, fontweight='bold')
+        xi = (i + 0.5) / 3
+        ax_aw.text(xi, 0.85, lbl, ha='center', va='center',
+                   fontsize=10, fontweight='bold', color=IMG_TEAL)
+        ax_aw.text(xi, 0.60, (val if val and val != EMPTY else '—')[:28],
+                   ha='center', va='center', fontsize=13, fontweight='bold', color=IMG_TEXT)
         if nat and nat != EMPTY:
-            _place_flag(ax_aw, nat, (xi, 0.20), zoom=0.46)
+            _place_flag(ax_aw, nat, (xi, 0.28), zoom=0.54)
 
     # ── Footer ────────────────────────────────────────────────
-    ax_f = fig.add_axes([0, 0, 1, 0.028])
+    ax_f = fig.add_axes([0, 0, 1, 0.022])
     ax_f.set_facecolor(IMG_BG); ax_f.axis('off')
-    ax_f.plot([0.05,0.95],[0.92,0.92], color=IMG_TEAL, lw=0.5, alpha=0.4)
-    ax_f.text(0.5, 0.42, 'prediction-wc2026.streamlit.app',
-              ha='center', va='center', fontsize=8.5, color=IMG_MUTED)
+    ax_f.plot([0.05,0.95],[0.88,0.88], color=IMG_TEAL, lw=0.5, alpha=0.4)
+    ax_f.text(0.5, 0.38, 'prediction-wc2026.streamlit.app',
+              ha='center', va='center', fontsize=9, color=IMG_MUTED)
 
     buf = io.BytesIO()
-    fig.savefig(buf, format=output_format, dpi=150, bbox_inches='tight', facecolor=IMG_BG)
+    # Nessun bbox_inches='tight' — la figura salva esattamente nelle dimensioni impostate
+    fig.savefig(buf, format=output_format, dpi=150, facecolor=IMG_BG)
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()
