@@ -1706,84 +1706,100 @@ def generate_image(output_format: str = "jpeg") -> bytes:
 
     # ── Attribution strip ────────────────────────────────────
     ax_att = fig.add_axes([0, 0.975, 1, 0.025])
-    ax_att.set_facecolor('#0d1e34')
-    ax_att.axis('off')
+    ax_att.set_facecolor('#0d1e34'); ax_att.axis('off')
     ax_att.text(0.5, 0.5, 'Made by R.A.Frisoli  \xb7  Match & Data Analyst',
                 ha='center', va='center', fontsize=9, fontweight='bold',
                 color=IMG_TEAL, transform=ax_att.transAxes)
 
-    # ── Header ───────────────────────────────────────────────
-    ax_h = fig.add_axes([0, 0.930, 1, 0.045])
-    ax_h.set_facecolor(IMG_TEAL)
+    # ── Header banner (fedele all'immagine: navy + bordo oro + logo + titolo + sottotitolo) ──
+    ax_h = fig.add_axes([0.008, 0.916, 0.984, 0.058])
+    ax_h.set_facecolor('#0d1a2e')
     ax_h.set_xlim(0, 1); ax_h.set_ylim(0, 1); ax_h.axis('off')
+    # Bordo arrotondato oro (come nell'immagine)
+    ax_h.add_patch(FancyBboxPatch(
+        (0.003, 0.04), 0.994, 0.920,
+        boxstyle="round,pad=0.015",
+        facecolor='none', edgecolor=IMG_GOLD,
+        linewidth=2.6, zorder=5, transform=ax_h.transAxes, clip_on=False))
+    # Logo trofeo
     try:
         from PIL import Image as _PILImage
-        _lp  = os.path.join(os.path.dirname(__file__), "assets", "wc2026_logo.webp")
-        _ld  = _np.array(_PILImage.open(_lp).convert("RGBA"), dtype=_np.uint8)
-        _m   = (_ld[:,:,0] < 35) & (_ld[:,:,1] < 35) & (_ld[:,:,2] < 35)
-        _ld[_m, 3] = 0
-        _ab  = AnnotationBbox(OffsetImage(_ld, zoom=0.22), (0.07, 0.5),
-                              frameon=False, zorder=4)
-        ax_h.add_artist(_ab)
-        _tx  = 0.57
+        _lp = os.path.join(os.path.dirname(__file__), "assets", "wc2026_logo.webp")
+        _ld = _np.array(_PILImage.open(_lp).convert("RGBA"), dtype=_np.uint8)
+        _ld[(_ld[:,:,0] < 35) & (_ld[:,:,1] < 35) & (_ld[:,:,2] < 35), 3] = 0
+        ax_h.add_artist(AnnotationBbox(OffsetImage(_ld, zoom=0.23), (0.055, 0.54),
+                                       frameon=False, zorder=4))
+        _tx = 0.58
     except Exception:
-        _tx = 0.5
-    ax_h.text(_tx, 0.60, 'FIFA WORLD CUP 2026', ha='center', va='center',
-              fontsize=21, fontweight='black', color=IMG_BG, transform=ax_h.transAxes)
-    ax_h.text(_tx, 0.18, 'USA  \xb7  CANADA  \xb7  MESSICO  \xb7  11 GIU – 19 LUG 2026',
-              ha='center', va='center', fontsize=7.5, fontweight='bold',
-              color='#0a2820', transform=ax_h.transAxes)
+        _tx = 0.50
+    # "FIFA" sotto il logo
+    ax_h.text(0.055, 0.06, 'FIFA', ha='center', va='bottom',
+              fontsize=7, fontweight='black', color=IMG_GOLD,
+              transform=ax_h.transAxes, zorder=4)
+    # Titolo principale (oro, bold)
+    ax_h.text(_tx, 0.64, 'FIFA WORLD CUP 2026', ha='center', va='center',
+              fontsize=21, fontweight='black', color=IMG_GOLD,
+              transform=ax_h.transAxes, zorder=4)
+    # Sottotitolo (grigio, come nell'immagine)
+    ax_h.text(_tx, 0.24,
+              'USA \xb7 Canada \xb7 Messico  |  11 giugno – 19 luglio 2026  |  48 squadre \xb7 104 partite',
+              ha='center', va='center', fontsize=8.5, color='#8d9cb8',
+              transform=ax_h.transAxes, zorder=4)
 
-    # ── Groups 4 rows \xd7 3 cols ───────────────────────────────
+    # ── Groups: 4 rows \xd7 3 cols (compact) ─────────────────────
     gkeys  = list(GROUPS.keys())
-    g_top, g_bot, gap = 0.928, 0.450, 0.008
+    g_top, g_bot, gap = 0.914, 0.492, 0.007
     col_w  = 1 / 3
     cell_w = col_w - 0.014
     cell_h = (g_top - g_bot) / 4 - gap
-    POS_C  = [IMG_GOLD, '#d0d0d0', '#cd7f32', IMG_MUTED]
-    POS_L  = ['1\xb0', '2\xb0', '3\xb0', '4\xb0']
+    POS_C = [IMG_GOLD, '#d0d0d0', '#cd7f32', IMG_MUTED]
+    POS_L = ['1\xb0', '2\xb0', '3\xb0', '4\xb0']
     for gi, grp in enumerate(gkeys):
         lx = (gi % 3) * col_w + 0.007
         ly = g_top - (gi // 3 + 1) * (cell_h + gap)
         ax = fig.add_axes([lx, ly, cell_w, cell_h])
         ax.set_facecolor(IMG_CARD); ax.set_xlim(0,1); ax.set_ylim(0,1); ax.axis('off')
         for s in ax.spines.values():
-            s.set_edgecolor(IMG_TEAL); s.set_linewidth(1.2)
+            s.set_edgecolor(IMG_TEAL); s.set_linewidth(1.1)
         ax.text(0.5, 0.90, f'GRUPPO {grp}', ha='center', va='center',
-                fontsize=11, fontweight='bold', color=IMG_TEAL)
-        ax.plot([0.05,0.95],[0.80,0.80], color=IMG_TEAL, lw=0.6, alpha=0.4)
+                fontsize=10.5, fontweight='bold', color=IMG_TEAL)
+        ax.plot([0.05,0.95],[0.80,0.80], color=IMG_TEAL, lw=0.5, alpha=0.4)
         for pos in range(4):
             team = grp_team(grp, pos)
             yy   = 0.68 - pos * 0.163
             ax.text(0.05, yy, POS_L[pos], ha='left', va='center',
-                    fontsize=9.5, color=POS_C[pos], fontweight='bold')
-            _place_flag(ax, team, (0.17, yy), zoom=0.46)
+                    fontsize=9, color=POS_C[pos], fontweight='bold')
+            _place_flag(ax, team, (0.17, yy), zoom=0.44)
             ax.text(0.30, yy, team[:16], ha='left', va='center',
-                    fontsize=9, color=IMG_TEXT if pos < 2 else IMG_MUTED)
+                    fontsize=8.5, color=IMG_TEXT if pos < 2 else IMG_MUTED)
 
     # ── VERTICAL BRACKET ─────────────────────────────────────
-    ax_br = fig.add_axes([0, 0.088, 1, 0.358])
+    ax_br = fig.add_axes([0, 0.085, 1, 0.405])
     ax_br.set_facecolor(IMG_BG); ax_br.set_xlim(0,100); ax_br.set_ylim(0,100)
     ax_br.axis('off')
     ax_br.text(50, 99, 'TABELLONE — FASE AD ELIMINAZIONE DIRETTA',
                ha='center', va='top', fontsize=11, fontweight='bold', color=IMG_TEAL)
 
     PW, PH, PH2 = 10.5, 3.5, 1.75
-
-    # x centers for N evenly-spaced pills
     xs8 = [6.25, 18.75, 31.25, 43.75, 56.25, 68.75, 81.25, 93.75]
     xs4 = [12.5, 37.5, 62.5, 87.5]
     xs2 = [25.0, 75.0]
     xs1 = [50.0]
 
-    # y centers (high = top of image)
+    # Top bracket (high y = top): R16→R8→QF→SF going downward
     Y_R16, Y_R8, Y_QF, Y_SF = 92.0, 79.5, 68.5, 59.0
-    CHAMP_CY, CHAMP_W, CHAMP_H = 49.5, 22.0, 10.0
-    CHAMP_TOP = CHAMP_CY + CHAMP_H / 2   # 54.5
-    CHAMP_BOT = CHAMP_CY - CHAMP_H / 2   # 44.5
-    Y_SF2, Y_QF2, Y_R8_2, Y_R16_2 = 40.0, 30.0, 19.5, 7.5
 
-    # ── pill-style helpers ───────────────────────────────────
+    # Champion box
+    CHAMP_CY  = 48.0
+    CHAMP_W   = 28.0   # wider to fit champion + 3rd side by side
+    CHAMP_H   = 10.0
+    CHAMP_TOP = CHAMP_CY + CHAMP_H / 2   # 53.0
+    CHAMP_BOT = CHAMP_CY - CHAMP_H / 2   # 43.0
+
+    # Bottom bracket (low y = bottom): SF2→QF2→R8_2→R16_2 going downward
+    Y_SF2, Y_QF2, Y_R8_2, Y_R16_2 = 36.0, 25.5, 14.0, 3.0
+
+    # ── Style helpers ────────────────────────────────────────
     def _ps(t, nw):
         if not t or t == EMPTY: return IMG_CARD, IMG_LINE, 0.5, IMG_MUTED, False
         if nw and t in nw:      return '#152b1c', IMG_TEAL, 1.8, IMG_TEXT, True
@@ -1817,130 +1833,121 @@ def generate_image(output_format: str = "jpeg") -> bytes:
             ax_br.text(cx, cy, '?', ha='center', va='center',
                        fontsize=7.5, color=IMG_MUTED, zorder=3)
 
-    def conn_down(xs_from, xs_to, y_from_cy, y_to_cy):
-        """Lines going DOWN: pair every 2 xs_from into 1 xs_to."""
-        yf = y_from_cy - PH2
-        yt = y_to_cy   + PH2
-        yb = (yf + yt) / 2
+    def conn_down(xs_from, xs_to, yf_cy, yt_cy):
+        yf = yf_cy - PH2; yt = yt_cy + PH2; yb = (yf+yt)/2
         for k, xm in enumerate(xs_to):
             xa, xb = xs_from[2*k], xs_from[2*k+1]
-            for x_ in (xa, xb):
-                ax_br.plot([x_, x_], [yf, yb], color=IMG_LINE, lw=0.5, zorder=1)
-            ax_br.plot([xa, xb], [yb, yb], color=IMG_LINE, lw=0.5, zorder=1)
-            ax_br.plot([xm, xm], [yb, yt], color=IMG_LINE, lw=0.5, zorder=1)
+            for x_ in (xa, xb): ax_br.plot([x_,x_],[yf,yb],color=IMG_LINE,lw=0.5,zorder=1)
+            ax_br.plot([xa,xb],[yb,yb],color=IMG_LINE,lw=0.5,zorder=1)
+            ax_br.plot([xm,xm],[yb,yt],color=IMG_LINE,lw=0.5,zorder=1)
 
-    def conn_up(xs_from, xs_to, y_from_cy, y_to_cy):
-        """Lines going UP: pair every 2 xs_from into 1 xs_to."""
-        yf = y_from_cy + PH2
-        yt = y_to_cy   - PH2
-        yb = (yf + yt) / 2
+    def conn_up(xs_from, xs_to, yf_cy, yt_cy):
+        yf = yf_cy + PH2; yt = yt_cy - PH2; yb = (yf+yt)/2
         for k, xm in enumerate(xs_to):
             xa, xb = xs_from[2*k], xs_from[2*k+1]
-            for x_ in (xa, xb):
-                ax_br.plot([x_, x_], [yf, yb], color=IMG_LINE, lw=0.5, zorder=1)
-            ax_br.plot([xa, xb], [yb, yb], color=IMG_LINE, lw=0.5, zorder=1)
-            ax_br.plot([xm, xm], [yb, yt], color=IMG_LINE, lw=0.5, zorder=1)
+            for x_ in (xa, xb): ax_br.plot([x_,x_],[yf,yb],color=IMG_LINE,lw=0.5,zorder=1)
+            ax_br.plot([xa,xb],[yb,yb],color=IMG_LINE,lw=0.5,zorder=1)
+            ax_br.plot([xm,xm],[yb,yt],color=IMG_LINE,lw=0.5,zorder=1)
 
     def slbl(y, txt, sz=7.0):
         ax_br.text(50, y, txt, ha='center', va='center',
                    fontsize=sz, color=IMG_MUTED, fontweight='bold')
 
-    # ── winner sets ──────────────────────────────────────────
     nw = lambda lst: set(t for t in lst if t and t != EMPTY)
-    NW_R8T  = nw(r8_win[:4]);  NW_R8B  = nw(r8_win[4:])
-    NW_QFT  = nw(qf_win[:2]); NW_QFB  = nw(qf_win[2:])
-    NW_SFT  = nw(sf_win[:1]); NW_SFB  = nw(sf_win[1:])
+    NW_R8T = nw(r8_win[:4]); NW_R8B = nw(r8_win[4:])
+    NW_QFT = nw(qf_win[:2]); NW_QFB = nw(qf_win[2:])
+    NW_SFT = nw(sf_win[:1]); NW_SFB = nw(sf_win[1:])
 
-    # ── TOP BRACKET (flows downward) ──────────────────────────
+    # ── TOP BRACKET ──────────────────────────────────────────
     slbl(96.5, '▾  SEDICESIMI  ▾', 7.5)
-    for xi, t in zip(xs8, r16_win[:8]):
-        dpill(xi, Y_R16, t, _ps(t, NW_R8T))
+    for xi, t in zip(xs8, r16_win[:8]): dpill(xi, Y_R16, t, _ps(t, NW_R8T))
     conn_down(xs8, xs4, Y_R16, Y_R8)
-
     slbl(85.5, '▾  OTTAVI  ▾')
-    for xi, t in zip(xs4, r8_win[:4]):
-        dpill(xi, Y_R8, t, _ps(t, NW_QFT))
+    for xi, t in zip(xs4, r8_win[:4]):  dpill(xi, Y_R8,  t, _ps(t, NW_QFT))
     conn_down(xs4, xs2, Y_R8, Y_QF)
-
     slbl(74.5, '▾  QUARTI  ▾')
-    for xi, t in zip(xs2, qf_win[:2]):
-        dpill(xi, Y_QF, t, _ps(t, NW_SFT))
+    for xi, t in zip(xs2, qf_win[:2]):  dpill(xi, Y_QF,  t, _ps(t, NW_SFT))
     conn_down(xs2, xs1, Y_QF, Y_SF)
-
     slbl(64.5, '▾  SEMIFINALI  ▾')
     dpill(xs1[0], Y_SF, sf_win[0], _ps_sf(sf_win[0]))
-    ax_br.plot([50,50], [Y_SF-PH2, CHAMP_TOP], color=IMG_GOLD, lw=1.2, zorder=1)
+    ax_br.plot([50,50],[Y_SF-PH2, CHAMP_TOP], color=IMG_GOLD, lw=1.2, zorder=1)
 
-    # ── CHAMPION BOX ─────────────────────────────────────────
+    # ── CHAMPION BOX (champion left, 3° right) ────────────────
+    cx = 50
     ax_br.add_patch(FancyBboxPatch(
-        (50-CHAMP_W/2, CHAMP_BOT), CHAMP_W, CHAMP_H,
-        boxstyle="round,pad=0.3",
+        (cx-CHAMP_W/2, CHAMP_BOT), CHAMP_W, CHAMP_H, boxstyle="round,pad=0.3",
         facecolor='#0f2a1a', edgecolor=IMG_GOLD, linewidth=2.2, zorder=2))
     ax_br.add_patch(FancyBboxPatch(
-        (50-CHAMP_W/2-0.5, CHAMP_BOT-0.5), CHAMP_W+1, CHAMP_H+1,
-        boxstyle="round,pad=0.3",
-        facecolor='none', edgecolor=IMG_TEAL, linewidth=0.7, alpha=0.3, zorder=1))
-    ax_br.text(50, CHAMP_TOP-1.6, 'CAMPIONE', ha='center', va='center',
+        (cx-CHAMP_W/2-0.5, CHAMP_BOT-0.5), CHAMP_W+1, CHAMP_H+1,
+        boxstyle="round,pad=0.3", facecolor='none',
+        edgecolor=IMG_TEAL, linewidth=0.7, alpha=0.3, zorder=1))
+
+    # Divider between champion and 3rd
+    ax_br.plot([cx+0.5, cx+0.5], [CHAMP_BOT+0.8, CHAMP_TOP-0.8],
+               color=IMG_GOLD, lw=0.6, alpha=0.5, zorder=3)
+
+    # Left: CAMPIONE
+    lc = cx - CHAMP_W/4  # = 50 - 7 = 43 (center of left half)
+    ax_br.text(lc, CHAMP_TOP-1.6, 'CAMPIONE', ha='center', va='center',
                fontsize=7.5, color=IMG_GOLD, fontweight='bold', zorder=3)
     cv = champ if champ and champ != EMPTY else None
     if cv:
-        _place_flag(ax_br, cv, (50-2.5, CHAMP_CY), zoom=0.55, zorder=3)
-        ax_br.text(50+0.5, CHAMP_CY, cv[:14], ha='left', va='center',
-                   fontsize=9, color=IMG_GOLD, fontweight='bold', zorder=3)
+        _place_flag(ax_br, cv, (cx-CHAMP_W/2+2.2, CHAMP_CY), zoom=0.52, zorder=3)
+        ax_br.text(cx-CHAMP_W/2+4.2, CHAMP_CY, cv[:10], ha='left', va='center',
+                   fontsize=8.5, color=IMG_GOLD, fontweight='bold', zorder=3)
     else:
-        ax_br.text(50, CHAMP_CY, '?', ha='center', va='center',
+        ax_br.text(lc, CHAMP_CY, '?', ha='center', va='center',
                    fontsize=10, color=IMG_GOLD, fontweight='bold', zorder=3)
+
+    # Right: 3° POSTO
+    rc = cx + CHAMP_W/4  # = 57 (center of right half)
+    ax_br.text(rc, CHAMP_TOP-1.6, '3\xb0 POSTO', ha='center', va='center',
+               fontsize=6.5, color=IMG_MUTED, zorder=3)
     td = third if third and third != EMPTY else None
     if td:
-        _place_flag(ax_br, td, (50-4.5, CHAMP_BOT+1.5), zoom=0.38, zorder=3)
-        ax_br.text(50-2.0, CHAMP_BOT+1.5, f'3\xb0: {td[:10]}', ha='left', va='center',
-                   fontsize=6.5, color=IMG_MUTED, zorder=3)
+        _place_flag(ax_br, td, (cx+1.2, CHAMP_CY), zoom=0.42, zorder=3)
+        ax_br.text(cx+3.2, CHAMP_CY, td[:10], ha='left', va='center',
+                   fontsize=8, color=IMG_MUTED, fontweight='bold', zorder=3)
     else:
-        ax_br.text(50, CHAMP_BOT+1.5, '3\xb0: ?', ha='center', va='center',
-                   fontsize=6.5, color=IMG_MUTED, zorder=3)
+        ax_br.text(rc, CHAMP_CY, '?', ha='center', va='center',
+                   fontsize=9, color=IMG_MUTED, zorder=3)
 
-    # ── BOTTOM BRACKET (flows upward) ─────────────────────────
-    ax_br.plot([50,50], [CHAMP_BOT, Y_SF2+PH2], color=IMG_GOLD, lw=1.2, zorder=1)
-    slbl(43.0, '▴  SEMIFINALI  ▴')
+    # ── BOTTOM BRACKET ────────────────────────────────────────
+    ax_br.plot([50,50],[CHAMP_BOT, Y_SF2+PH2], color=IMG_GOLD, lw=1.2, zorder=1)
+    slbl(41.5, '▴  SEMIFINALI  ▴')
     dpill(xs1[0], Y_SF2, sf_win[1], _ps_sf(sf_win[1]))
     conn_up(xs2, xs1, Y_QF2, Y_SF2)
-
-    slbl(35.0, '▴  QUARTI  ▴')
-    for xi, t in zip(xs2, qf_win[2:]):
-        dpill(xi, Y_QF2, t, _ps(t, NW_SFB))
+    slbl(31.0, '▴  QUARTI  ▴')
+    for xi, t in zip(xs2, qf_win[2:]):  dpill(xi, Y_QF2,  t, _ps(t, NW_SFB))
     conn_up(xs4, xs2, Y_R8_2, Y_QF2)
-
-    slbl(25.5, '▴  OTTAVI  ▴')
-    for xi, t in zip(xs4, r8_win[4:]):
-        dpill(xi, Y_R8_2, t, _ps(t, NW_QFB))
+    slbl(20.0, '▴  OTTAVI  ▴')
+    for xi, t in zip(xs4, r8_win[4:]):  dpill(xi, Y_R8_2, t, _ps(t, NW_QFB))
     conn_up(xs8, xs4, Y_R16_2, Y_R8_2)
-
-    slbl(14.0, '▴  SEDICESIMI  ▴', 7.5)
-    for xi, t in zip(xs8, r16_win[8:]):
-        dpill(xi, Y_R16_2, t, _ps(t, NW_R8B))
+    slbl(9.0, '▴  SEDICESIMI  ▴', 7.5)
+    for xi, t in zip(xs8, r16_win[8:]): dpill(xi, Y_R16_2, t, _ps(t, NW_R8B))
 
     # ── Awards bar ────────────────────────────────────────────
-    ax_aw = fig.add_axes([0, 0.030, 1, 0.056])
+    ax_aw = fig.add_axes([0, 0.028, 1, 0.055])
     ax_aw.set_facecolor(IMG_CARD); ax_aw.set_xlim(0,1); ax_aw.set_ylim(0,1); ax_aw.axis('off')
     ax_aw.plot([0,1],[0.97,0.97], color=IMG_TEAL, lw=2)
     for i, (lbl, val, nat) in enumerate([
-        ("MIGLIOR GIOCATORE", bp,  nat_mg),
-        ("CAPOCANNONIERE",    ts,  nat_cc),
-        ("MIGLIOR UNDER 23",  bu,  nat_u23),
+        ("MIGLIOR GIOCATORE", bp, nat_mg),
+        ("CAPOCANNONIERE",    ts, nat_cc),
+        ("MIGLIOR UNDER 23",  bu, nat_u23),
     ]):
-        xi = (i + 0.5) / 3
-        ax_aw.text(xi, 0.84, lbl, ha='center', va='center',
-                   fontsize=9, color=IMG_TEAL, fontweight='bold')
-        ax_aw.text(xi, 0.50, (val if val and val != EMPTY else '—')[:28],
-                   ha='center', va='center', fontsize=10.5, color=IMG_TEXT, fontweight='bold')
+        xi = (i+0.5)/3
+        ax_aw.text(xi, 0.82, lbl, ha='center', va='center',
+                   fontsize=8.5, color=IMG_TEAL, fontweight='bold')
+        ax_aw.text(xi, 0.52, (val if val and val != EMPTY else '—')[:28],
+                   ha='center', va='center', fontsize=10, color=IMG_TEXT, fontweight='bold')
         if nat and nat != EMPTY:
-            _place_flag(ax_aw, nat, (xi, 0.18), zoom=0.50)
+            _place_flag(ax_aw, nat, (xi, 0.20), zoom=0.46)
 
     # ── Footer ────────────────────────────────────────────────
-    ax_f = fig.add_axes([0, 0, 1, 0.030])
+    ax_f = fig.add_axes([0, 0, 1, 0.028])
     ax_f.set_facecolor(IMG_BG); ax_f.axis('off')
-    ax_f.plot([0.05,0.95],[0.95,0.95], color=IMG_TEAL, lw=0.5, alpha=0.4)
-    ax_f.text(0.5, 0.45, 'prediction-wc2026.streamlit.app',
+    ax_f.plot([0.05,0.95],[0.92,0.92], color=IMG_TEAL, lw=0.5, alpha=0.4)
+    ax_f.text(0.5, 0.42, 'prediction-wc2026.streamlit.app',
               ha='center', va='center', fontsize=8.5, color=IMG_MUTED)
 
     buf = io.BytesIO()
