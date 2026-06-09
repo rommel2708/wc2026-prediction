@@ -1702,24 +1702,58 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     nat_cc  = st.session_state.get("nat_cc",  EMPTY)
     nat_u23 = st.session_state.get("nat_u23", EMPTY)
 
-    fig = plt.figure(figsize=(20, 30), facecolor=IMG_BG)
+    # 9:16 portrait (social media friendly)
+    fig = plt.figure(figsize=(18, 32), facecolor=IMG_BG)
 
-    # ── Header ──────────────────────────────────────────────
-    ax_h = fig.add_axes([0, 0.965, 1, 0.035])
+    # ── Attribution strip (very top) ─────────────────────────
+    ax_att = fig.add_axes([0, 0.975, 1, 0.025])
+    ax_att.set_facecolor('#0d1e34')
+    ax_att.axis('off')
+    ax_att.text(0.5, 0.5, 'Made by R.A.Frisoli  \xb7  Match & Data Analyst',
+                ha='center', va='center', fontsize=9, fontweight='bold',
+                color=IMG_TEAL, transform=ax_att.transAxes)
+
+    # ── Main header ──────────────────────────────────────────
+    ax_h = fig.add_axes([0, 0.930, 1, 0.045])
     ax_h.set_facecolor(IMG_TEAL)
+    ax_h.set_xlim(0, 1)
+    ax_h.set_ylim(0, 1)
     ax_h.axis('off')
-    ax_h.text(0.5, 0.5, 'FIFA WORLD CUP 2026  \xb7  MY PREDICTION',
-              ha='center', va='center', fontsize=17, fontweight='bold',
+
+    # Try to load WC2026 logo (remove black background for clean teal overlay)
+    try:
+        from PIL import Image as _PILImage
+        _logo_path = os.path.join(os.path.dirname(__file__), "assets", "wc2026_logo.webp")
+        _logo_img  = _PILImage.open(_logo_path).convert("RGBA")
+        _ld        = _np.array(_logo_img, dtype=_np.uint8)
+        # Make near-black pixels transparent
+        _mask = (_ld[:,:,0] < 35) & (_ld[:,:,1] < 35) & (_ld[:,:,2] < 35)
+        _ld[_mask, 3] = 0
+        _logo_arr = _ld
+        _logo_zoom = 0.52
+        _im = OffsetImage(_logo_arr, zoom=_logo_zoom)
+        _ab = AnnotationBbox(_im, (0.09, 0.5), frameon=False, zorder=4)
+        ax_h.add_artist(_ab)
+        _title_x = 0.56
+    except Exception:
+        _title_x = 0.5
+
+    ax_h.text(_title_x, 0.55, 'FIFA WORLD CUP 2026',
+              ha='center', va='center', fontsize=22, fontweight='black',
               color=IMG_BG, transform=ax_h.transAxes)
+    ax_h.text(_title_x, 0.18, 'USA  \xb7  CANADA  \xb7  MESSICO  \xb7  11 GIU – 19 LUG 2026',
+              ha='center', va='center', fontsize=8, fontweight='bold',
+              color='#0d3329', transform=ax_h.transAxes)
 
     # ── Groups grid: 4 rows x 3 cols ───────────────────────────
     gkeys  = list(GROUPS.keys())
     n_cols = 3
-    g_top  = 0.960
+    g_top  = 0.928
+    g_bot  = 0.448
     gap    = 0.008
     col_w  = 1 / n_cols
     cell_w = col_w - 2 * 0.007
-    cell_h = (0.960 - 0.490) / 4 - gap
+    cell_h = (g_top - g_bot) / 4 - gap
     POS_COLORS_IMG = [IMG_GOLD, '#d0d0d0', '#cd7f32', IMG_MUTED]
     POS_LABELS_IMG = ['1\xb0', '2\xb0', '3\xb0', '4\xb0']
 
@@ -1744,12 +1778,12 @@ def generate_image(output_format: str = "jpeg") -> bytes:
             yy   = 0.68 - pos * 0.163
             ax.text(0.05, yy, POS_LABELS_IMG[pos], ha='left', va='center',
                     fontsize=9.5, color=POS_COLORS_IMG[pos], fontweight='bold')
-            _place_flag(ax, team, (0.17, yy), zoom=0.48)
+            _place_flag(ax, team, (0.17, yy), zoom=0.46)
             ax.text(0.30, yy, team[:16], ha='left', va='center',
                     fontsize=9, color=IMG_TEXT if pos < 2 else IMG_MUTED)
 
     # ── Bracket ──────────────────────────────────────────────
-    ax_br = fig.add_axes([0, 0.095, 1, 0.390])
+    ax_br = fig.add_axes([0, 0.090, 1, 0.353])
     ax_br.set_facecolor(IMG_BG)
     ax_br.set_xlim(0, 100)
     ax_br.set_ylim(0, 100)
@@ -1768,39 +1802,56 @@ def generate_image(output_format: str = "jpeg") -> bytes:
 
     PW, PH = 13, 4.6
 
-    def draw_col(teams, cx, start_y, step, color=IMG_TEXT, bg=IMG_CARD,
-                 border=IMG_LINE, fontsize=9, bold=False):
+    def _pill_style(t, winners_set):
+        if not t or t == EMPTY:
+            return IMG_CARD, IMG_LINE, 0.6, IMG_MUTED, False
+        if not winners_set:
+            return IMG_CARD, IMG_LINE, 0.6, IMG_TEXT, False
+        if t in winners_set:
+            return '#152b1c', IMG_TEAL, 1.8, IMG_TEXT, True
+        return '#0e1820', '#1d2d3a', 0.4, '#3a5068', False
+
+    def draw_col(teams, cx, start_y, step, next_winners=None,
+                 sf_gold=False, fontsize=9):
+        nw = set(t for t in (next_winners or []) if t and t != EMPTY)
         for i, t in enumerate(teams):
-            y = start_y - i * step
+            y  = start_y - i * step
             px = cx - PW / 2
             py = y - PH / 2
-            # pill background
+            if sf_gold and t and t != EMPTY:
+                if nw and t in nw:
+                    pbg, pb, plw, tc, bold = '#1f1a00', IMG_GOLD, 2.0, IMG_GOLD, True
+                else:
+                    pbg, pb, plw, tc, bold = '#0e1820', '#1d2d3a', 0.4, '#3a5068', False
+            else:
+                pbg, pb, plw, tc, bold = _pill_style(t, nw)
             rect = FancyBboxPatch((px, py), PW, PH, boxstyle="round,pad=0.15",
-                                  facecolor=bg, edgecolor=border, linewidth=0.6, zorder=2)
+                                  facecolor=pbg, edgecolor=pb, linewidth=plw, zorder=2)
             ax_br.add_patch(rect)
             if t and t != EMPTY:
                 arr = _flag_arr(t)
                 if arr is not None:
-                    _place_flag(ax_br, t, (px + 1.8, y), zoom=0.62, zorder=3)
+                    _place_flag(ax_br, t, (px + 1.8, y), zoom=0.50, zorder=3)
                     ax_br.text(px + 4.0, y, t[:13], ha='left', va='center',
-                               fontsize=fontsize, color=color,
+                               fontsize=fontsize, color=tc,
                                fontweight='bold' if bold else 'normal', zorder=3)
                 else:
                     ax_br.text(cx, y, t[:14], ha='center', va='center',
-                               fontsize=fontsize, color=color,
+                               fontsize=fontsize, color=tc,
                                fontweight='bold' if bold else 'normal', zorder=3)
             else:
                 ax_br.text(cx, y, '?', ha='center', va='center',
                            fontsize=fontsize, color=IMG_MUTED, zorder=3)
 
-    draw_col([r16_win[i] for i in range(8)],    5,  85, 10)
-    draw_col([r16_win[i] for i in range(8, 16)], 16, 85, 10)
-    draw_col([r8_win[i] for i in range(4)],     22, 80, 20)
-    draw_col([r8_win[i] for i in range(4, 8)],  32, 80, 20)
-    draw_col(qf_win[:2], 39, 70, 40)
-    draw_col(qf_win[2:], 49, 70, 40)
-    draw_col(sf_win[:1], 56, 50, 40, color=IMG_GOLD, border=IMG_GOLD, bold=True)
-    draw_col(sf_win[1:], 67, 50, 40, color=IMG_GOLD, border=IMG_GOLD, bold=True)
+    draw_col(r16_win[:8],  5,  85, 10, next_winners=r8_win[:4])
+    draw_col(r16_win[8:], 16,  85, 10, next_winners=r8_win[4:])
+    draw_col(r8_win[:4],  22,  80, 20, next_winners=qf_win[:2])
+    draw_col(r8_win[4:],  32,  80, 20, next_winners=qf_win[2:])
+    draw_col(qf_win[:2],  39,  70, 40, next_winners=sf_win[:1])
+    draw_col(qf_win[2:],  49,  70, 40, next_winners=sf_win[1:])
+    _champ_nw = [champ] if champ and champ != EMPTY else []
+    draw_col(sf_win[:1],  56,  50, 40, next_winners=_champ_nw, sf_gold=True)
+    draw_col(sf_win[1:],  67,  50, 40, next_winners=_champ_nw, sf_gold=True)
 
     ax_br.annotate("", xy=(73, 50), xytext=(70, 50),
                    arrowprops=dict(arrowstyle="->", color=IMG_GOLD, lw=1.5))
@@ -1836,7 +1887,7 @@ def generate_image(output_format: str = "jpeg") -> bytes:
                    fontsize=9, color=IMG_MUTED, zorder=3)
 
     # ── Awards bar ───────────────────────────────────────────
-    ax_aw = fig.add_axes([0, 0.033, 1, 0.060])
+    ax_aw = fig.add_axes([0, 0.030, 1, 0.058])
     ax_aw.set_facecolor(IMG_CARD)
     ax_aw.set_xlim(0, 1)
     ax_aw.set_ylim(0, 1)
@@ -1859,19 +1910,13 @@ def generate_image(output_format: str = "jpeg") -> bytes:
             _place_flag(ax_aw, nat, (xi, 0.18), zoom=0.50)
 
     # ── Footer ────────────────────────────────────────────────
-    ax_f = fig.add_axes([0, 0, 1, 0.050])
+    ax_f = fig.add_axes([0, 0, 1, 0.030])
     ax_f.set_facecolor(IMG_BG)
     ax_f.axis('off')
     ax_f.plot([0.05, 0.95], [0.97, 0.97], color=IMG_TEAL, lw=0.5, alpha=0.4)
-    ax_f.text(0.5, 0.78,
-              'FIFA World Cup 2026  \xb7  USA \xb7 Canada \xb7 Messico  \xb7  11 giu – 19 lug 2026',
+    ax_f.text(0.5, 0.45,
+              'prediction-wc2026.streamlit.app',
               ha='center', va='center', fontsize=8.5, color=IMG_MUTED)
-    ax_f.text(0.5, 0.47,
-              'Made by R.A.Frisoli  \xb7  Match & Data Analyst',
-              ha='center', va='center', fontsize=9, color=IMG_TEAL, fontweight='bold')
-    ax_f.text(0.5, 0.17,
-              'wc2026-prediction.streamlit.app',
-              ha='center', va='center', fontsize=8, color=IMG_MUTED)
 
     buf = io.BytesIO()
     fig.savefig(buf, format=output_format, dpi=150, bbox_inches='tight', facecolor=IMG_BG)
