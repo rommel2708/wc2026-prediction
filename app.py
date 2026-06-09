@@ -1663,56 +1663,60 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     ts      = st.session_state.get("top_scorer", EMPTY)
     bu      = st.session_state.get("best_u23", EMPTY)
 
-    fig = plt.figure(figsize=(20, 28), facecolor=IMG_BG)
+    fig = plt.figure(figsize=(20, 30), facecolor=IMG_BG)
 
-    # Header
+    # ── Header ──────────────────────────────────────────────
     ax_h = fig.add_axes([0, 0.965, 1, 0.035])
     ax_h.set_facecolor(IMG_TEAL)
     ax_h.axis('off')
-    ax_h.text(0.5, 0.5, '🏆  FIFA WORLD CUP 2026  ·  MY PREDICTION',
+    ax_h.text(0.5, 0.5, 'FIFA WORLD CUP 2026  ·  MY PREDICTION',
               ha='center', va='center', fontsize=17, fontweight='bold',
               color=IMG_BG, transform=ax_h.transAxes)
 
-    # Groups grid (3 rows × 4 cols)
-    gkeys = list(GROUPS.keys())
-    g_top, g_bot = 0.960, 0.600
-    cell_w = 0.245
-    cell_h = (g_top - g_bot) / 3 - 0.005
+    # ── Groups grid: 4 rows × 3 cols ───────────────────────────
+    gkeys  = list(GROUPS.keys())
+    n_cols = 3
+    g_top  = 0.960
+    gap    = 0.008
+    col_w  = 1 / n_cols            # ≈ 0.333
+    cell_w = col_w - 2 * 0.007    # ≈ 0.319
+    cell_h = (0.960 - 0.490) / 4 - gap   # ≈ 0.1075
     POS_COLORS_IMG = [IMG_GOLD, '#d0d0d0', '#cd7f32', IMG_MUTED]
     POS_LABELS_IMG = ['1°', '2°', '3°', '4°']
 
     for gi, grp in enumerate(gkeys):
-        col = gi % 4
-        row = gi // 4
-        lx = col * 0.25 + 0.005
-        ly = g_top - (row + 1) * (cell_h + 0.008)
-        ax = fig.add_axes([lx, ly, cell_w, cell_h])
+        col = gi % n_cols
+        row = gi // n_cols
+        lx  = col * col_w + 0.007
+        ly  = g_top - (row + 1) * (cell_h + gap)
+        ax  = fig.add_axes([lx, ly, cell_w, cell_h])
         ax.set_facecolor(IMG_CARD)
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
         ax.axis('off')
         for s in ax.spines.values():
-            s.set_edgecolor(IMG_GOLD)
-            s.set_linewidth(0.8)
+            s.set_edgecolor(IMG_TEAL)
+            s.set_linewidth(1.2)
         ax.text(0.5, 0.90, f'GRUPPO {grp}', ha='center', va='center',
-                fontsize=9, fontweight='bold', color=IMG_TEAL)
+                fontsize=11, fontweight='bold', color=IMG_TEAL)
+        ax.plot([0.05, 0.95], [0.80, 0.80], color=IMG_TEAL, lw=0.6, alpha=0.4)
         for pos in range(4):
             team = grp_team(grp, pos)
-            f = flag(team)
-            yy = 0.72 - pos * 0.18
-            ax.text(0.06, yy, POS_LABELS_IMG[pos], ha='left', va='center',
-                    fontsize=7.5, color=POS_COLORS_IMG[pos], fontweight='bold')
-            ax.text(0.24, yy, f"{f} {team[:14]}", ha='left', va='center',
-                    fontsize=7, color=IMG_TEXT if pos < 2 else IMG_MUTED)
+            f   = flag(team)
+            yy  = 0.68 - pos * 0.163
+            ax.text(0.05, yy, POS_LABELS_IMG[pos], ha='left', va='center',
+                    fontsize=9.5, color=POS_COLORS_IMG[pos], fontweight='bold')
+            ax.text(0.22, yy, f"{f} {team[:16]}", ha='left', va='center',
+                    fontsize=9, color=IMG_TEXT if pos < 2 else IMG_MUTED)
 
-    # Bracket
-    ax_br = fig.add_axes([0, 0.115, 1, 0.480])
+    # ── Bracket ──────────────────────────────────────────────
+    ax_br = fig.add_axes([0, 0.095, 1, 0.390])
     ax_br.set_facecolor(IMG_BG)
     ax_br.set_xlim(0, 100)
     ax_br.set_ylim(0, 100)
     ax_br.axis('off')
-    ax_br.text(50, 97, '⚔️  TABELLONE — FASE AD ELIMINAZIONE DIRETTA',
-               ha='center', va='center', fontsize=12, fontweight='bold', color=IMG_TEAL)
+    ax_br.text(50, 97, 'TABELLONE — FASE AD ELIMINAZIONE DIRETTA',
+               ha='center', va='center', fontsize=13, fontweight='bold', color=IMG_TEAL)
 
     col_info = [
         (10, "SEDICESIMI"), (27, "OTTAVI"), (44, "QUARTI"),
@@ -1720,22 +1724,22 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     ]
     for cx, name in col_info:
         ax_br.text(cx, 92, name, ha='center', va='center',
-                   fontsize=8, color=IMG_MUTED, fontweight='bold')
-        ax_br.plot([cx - 7, cx + 7], [90, 90], color=IMG_LINE, lw=0.4)
+                   fontsize=10, color=IMG_MUTED, fontweight='bold')
+        ax_br.plot([cx - 7, cx + 7], [90, 90], color=IMG_TEAL, lw=0.5, alpha=0.4)
 
-    PW, PH = 13, 3.8
+    PW, PH = 13, 4.6
 
     def draw_col(teams, cx, start_y, step, color=IMG_TEXT, bg=IMG_CARD,
-                 border=IMG_LINE, fontsize=7, bold=False):
+                 border=IMG_LINE, fontsize=9, bold=False):
         for i, t in enumerate(teams):
             y = start_y - i * step
             pill(ax_br, cx - PW / 2, y - PH / 2, PW, PH, t,
                  color, bg, border, fontsize, bold)
 
-    draw_col([r16_win[i] for i in range(8)],  5,  85, 10)
+    draw_col([r16_win[i] for i in range(8)],    5,  85, 10)
     draw_col([r16_win[i] for i in range(8, 16)], 16, 85, 10)
-    draw_col([r8_win[i] for i in range(4)],  22, 80, 20)
-    draw_col([r8_win[i] for i in range(4, 8)], 32, 80, 20)
+    draw_col([r8_win[i] for i in range(4)],     22, 80, 20)
+    draw_col([r8_win[i] for i in range(4, 8)],  32, 80, 20)
     draw_col(qf_win[:2], 39, 70, 40)
     draw_col(qf_win[2:], 49, 70, 40)
     draw_col(sf_win[:1], 56, 50, 40, color=IMG_GOLD, border=IMG_GOLD, bold=True)
@@ -1744,56 +1748,60 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     ax_br.annotate("", xy=(73, 50), xytext=(70, 50),
                    arrowprops=dict(arrowstyle="->", color=IMG_GOLD, lw=1.5))
 
-    cx_final = 85
+    cx_final  = 85
     rect_champ = FancyBboxPatch(
-        (cx_final - 10, 38), 20, 24, boxstyle="round,pad=0.5",
+        (cx_final - 10, 36), 20, 26, boxstyle="round,pad=0.5",
         facecolor='#0f2a1a', edgecolor=IMG_GOLD, linewidth=2.5, zorder=2,
     )
     ax_br.add_patch(rect_champ)
-    ax_br.text(cx_final, 60, '🏆', ha='center', va='center', fontsize=22, zorder=3)
-    ax_br.text(cx_final, 54, 'CAMPIONE', ha='center', va='center',
-               fontsize=8, color=IMG_GOLD, fontweight='bold', zorder=3)
+    rect_glow = FancyBboxPatch(
+        (cx_final - 10.5, 35.5), 21, 27, boxstyle="round,pad=0.5",
+        facecolor='none', edgecolor=IMG_TEAL, linewidth=0.8, zorder=1, alpha=0.3,
+    )
+    ax_br.add_patch(rect_glow)
+    ax_br.text(cx_final, 61, 'CAMPIONE', ha='center', va='center',
+               fontsize=10, color=IMG_GOLD, fontweight='bold', zorder=3)
     champ_disp = champ if champ and champ != EMPTY else '?'
     f_c = flag(champ_disp) if champ_disp != '?' else ''
-    ax_br.text(cx_final, 47, f"{f_c} {champ_disp[:16]}", ha='center', va='center',
-               fontsize=10, color=IMG_GOLD, fontweight='bold', zorder=3)
+    ax_br.text(cx_final, 52, f"{f_c} {champ_disp[:16]}", ha='center', va='center',
+               fontsize=12, color=IMG_GOLD, fontweight='bold', zorder=3)
     third_disp = third if third and third != EMPTY else '?'
     f_t = flag(third_disp) if third_disp != '?' else ''
-    ax_br.text(cx_final, 41, f"🥉 3°: {f_t} {third_disp[:12]}", ha='center', va='center',
-               fontsize=8, color=IMG_MUTED, zorder=3)
+    ax_br.text(cx_final, 40, f"3°: {f_t} {third_disp[:14]}", ha='center', va='center',
+               fontsize=9, color=IMG_MUTED, zorder=3)
 
-    # Awards bar
-    ax_aw = fig.add_axes([0, 0.04, 1, 0.07])
+    # ── Awards bar ───────────────────────────────────────────
+    ax_aw = fig.add_axes([0, 0.038, 1, 0.055])
     ax_aw.set_facecolor(IMG_CARD)
     ax_aw.set_xlim(0, 1)
     ax_aw.set_ylim(0, 1)
     ax_aw.axis('off')
-    ax_aw.plot([0, 1], [0.97, 0.97], color=IMG_TEAL, lw=1.5)
+    ax_aw.plot([0, 1], [0.97, 0.97], color=IMG_TEAL, lw=2)
 
     awards = [
-        ("🏅  MIGLIOR GIOCATORE", bp),
-        ("⚽  CAPOCANNONIERE", ts),
-        ("🌱  MIGLIOR UNDER 23", bu),
+        ("MIGLIOR GIOCATORE", bp),
+        ("CAPOCANNONIERE",    ts),
+        ("MIGLIOR UNDER 23",  bu),
     ]
     for i, (label, val) in enumerate(awards):
-        xi = (i + 0.5) / 3
-        ax_aw.text(xi, 0.75, label, ha='center', va='center',
-                   fontsize=8, color=IMG_MUTED, fontweight='bold')
-        disp = val if val and val != EMPTY else '—'
-        ax_aw.text(xi, 0.38, disp[:26], ha='center', va='center',
-                   fontsize=10, color=IMG_TEXT, fontweight='bold')
+        xi   = (i + 0.5) / 3
+        disp = val if val and val != EMPTY else "—"
+        ax_aw.text(xi, 0.78, label, ha='center', va='center',
+                   fontsize=9, color=IMG_TEAL, fontweight='bold')
+        ax_aw.text(xi, 0.35, disp[:28], ha='center', va='center',
+                   fontsize=10.5, color=IMG_TEXT, fontweight='bold')
 
-    # Footer
-    ax_f = fig.add_axes([0, 0, 1, 0.04])
+    # ── Footer ────────────────────────────────────────────────
+    ax_f = fig.add_axes([0, 0, 1, 0.038])
     ax_f.set_facecolor(IMG_BG)
     ax_f.axis('off')
-    ax_f.text(0.5, 0.6,
+    ax_f.text(0.5, 0.55,
               'FIFA World Cup 2026  ·  USA · Canada · Messico  ·  11 giu – 19 lug 2026',
-              ha='center', va='center', fontsize=8, color=IMG_MUTED)
-    ax_f.plot([0.1, 0.9], [0.9, 0.9], color=IMG_LINE, lw=0.5)
+              ha='center', va='center', fontsize=8.5, color=IMG_MUTED)
+    ax_f.plot([0.05, 0.95], [0.92, 0.92], color=IMG_TEAL, lw=0.5, alpha=0.4)
 
     buf = io.BytesIO()
-    fig.savefig(buf, format=output_format, dpi=140, bbox_inches='tight', facecolor=IMG_BG)
+    fig.savefig(buf, format=output_format, dpi=150, bbox_inches='tight', facecolor=IMG_BG)
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()
@@ -1802,6 +1810,12 @@ def generate_image(output_format: str = "jpeg") -> bytes:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # TAB 4 — SALVA
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+@st.cache_resource
+def _pred_store():
+    """Lista condivisa server-level (tutti gli utenti connessi la vedono)."""
+    return []
+
 with tab_s:
     st.subheader("📸 Salva la tua Prediction")
     st.caption("Genera l'immagine e scaricala per condividerla su LinkedIn o Instagram.")
@@ -1826,7 +1840,6 @@ with tab_s:
         <div style="display:flex;align-items:flex-end;justify-content:center;
                     gap:10px;margin:28px 0 20px;">
           <div style="text-align:center;flex:1;">
-            <div style="font-size:30px;margin-bottom:6px;">🥈</div>
             <div style="font-size:14px;font-weight:700;color:#e0e0e0;
                         margin-bottom:10px;min-height:42px;">{_pn(runner_up)}</div>
             <div style="background:linear-gradient(160deg,#6b6b6b,#c0c0c0);
@@ -1836,7 +1849,6 @@ with tab_s:
             </div>
           </div>
           <div style="text-align:center;flex:1;">
-            <div style="font-size:38px;margin-bottom:6px;">🏆</div>
             <div style="font-size:16px;font-weight:900;color:#FFD700;
                         margin-bottom:10px;min-height:42px;">{_pn(champion)}</div>
             <div style="background:linear-gradient(160deg,#a07800,#FFD700);
@@ -1847,7 +1859,6 @@ with tab_s:
             </div>
           </div>
           <div style="text-align:center;flex:1;">
-            <div style="font-size:30px;margin-bottom:6px;">🥉</div>
             <div style="font-size:14px;font-weight:700;color:#c8986a;
                         margin-bottom:10px;min-height:42px;">{_pn(third_pl)}</div>
             <div style="background:linear-gradient(160deg,#5c3410,#cd7f32);
@@ -1864,29 +1875,53 @@ with tab_s:
     # ── Premi individuali ──────────────────────────────────────────
     st.markdown(
         '<div style="text-align:center;color:#1DE9B6;font-weight:800;font-size:12px;'
-        'letter-spacing:1.5px;margin-bottom:14px;">🌟  PREMI INDIVIDUALI</div>',
+        'letter-spacing:1.5px;margin-bottom:14px;">PREMI INDIVIDUALI</div>',
         unsafe_allow_html=True,
     )
     a1, a2, a3 = st.columns(3)
     with a1:
-        st.metric("🏅 Miglior Giocatore", bp if bp != EMPTY else "—")
+        st.metric("Miglior Giocatore", bp if bp != EMPTY else "—")
     with a2:
-        st.metric("⚽ Capocannoniere", ts if ts != EMPTY else "—")
+        st.metric("Capocannoniere", ts if ts != EMPTY else "—")
     with a3:
-        st.metric("🌱 Miglior U23", bu if bu != EMPTY else "—")
+        st.metric("Miglior U23", bu if bu != EMPTY else "—")
 
     st.divider()
 
-    if st.button("🎨 Genera Immagine", type="primary", use_container_width=True):
+    # ── Nome / Cognome ─────────────────────────────────────────────
+    nc1, nc2 = st.columns(2)
+    with nc1:
+        _nome = st.text_input("Nome", key="save_nome", placeholder="es. Mario")
+    with nc2:
+        _cognome = st.text_input("Cognome", key="save_cognome", placeholder="es. Rossi")
+    _pubblica = st.toggle("Rendi la prediction pubblica (visibile a tutti)", key="save_pubblica")
+
+    if st.button("Genera Immagine", type="primary", use_container_width=True):
         with st.spinner("Generando l'immagine..."):
             st.session_state["_img_jpg"] = generate_image("jpeg")
             st.session_state["_img_pdf"] = generate_image("pdf")
+
+        if _pubblica:
+            _autore = f"{_nome.strip()} {_cognome.strip()}".strip() or "Anonimo"
+            import datetime as _dt
+            _pred_store().insert(0, {
+                'autore': _autore,
+                'campione': champion if champion != EMPTY else "—",
+                'terzo': third_pl if third_pl != EMPTY else "—",
+                'mvp': bp if bp != EMPTY else "—",
+                'capo': ts if ts != EMPTY else "—",
+                'u23': bu if bu != EMPTY else "—",
+                'ts': _dt.datetime.now().strftime('%d/%m/%Y %H:%M'),
+            })
+            if len(_pred_store()) > 200:
+                _pred_store().pop()
+            st.toast(f"Prediction di {_autore} pubblicata!", icon="✅")
 
     if "_img_jpg" in st.session_state:
         dl1, dl2 = st.columns(2)
         with dl1:
             st.download_button(
-                label="⬇️  Scarica JPG",
+                label="Scarica JPG",
                 data=st.session_state["_img_jpg"],
                 file_name="wc2026_my_prediction.jpg",
                 mime="image/jpeg",
@@ -1894,10 +1929,45 @@ with tab_s:
             )
         with dl2:
             st.download_button(
-                label="📄  Scarica PDF",
+                label="Scarica PDF",
                 data=st.session_state["_img_pdf"],
                 file_name="wc2026_my_prediction.pdf",
                 mime="application/pdf",
                 use_container_width=True,
             )
-        st.success("✅ Pronta! Condividi con l'hashtag #WorldCup2026 #FIFA2026")
+        st.success("Pronta! Condividi con l'hashtag #WorldCup2026 #FIFA2026")
+
+    st.divider()
+
+    # ── Storico prediction pubbliche ───────────────────────────────
+    _preds = _pred_store()
+    st.markdown(
+        '<div style="color:#1DE9B6;font-weight:800;font-size:13px;'
+        'letter-spacing:1px;margin-bottom:10px;">PREDICTION DEGLI ALTRI</div>',
+        unsafe_allow_html=True,
+    )
+    if not _preds:
+        st.info("Nessuna prediction pubblica ancora — sii il primo!")
+    else:
+        for _p in _preds:
+            st.markdown(
+                f'<div style="background:#162032;border:1px solid rgba(29,233,182,0.2);'
+                f'border-radius:10px;padding:12px 16px;margin-bottom:8px;">'
+                f'<div style="display:flex;justify-content:space-between;align-items:center;">'
+                f'<span style="color:#F0F6FC;font-weight:700;font-size:13px;">{_p["autore"]}</span>'
+                f'<span style="color:rgba(240,246,252,0.4);font-size:10px;">{_p["ts"]}</span>'
+                f'</div>'
+                f'<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">'
+                f'<span style="background:#0A1628;border:1px solid #D4A017;border-radius:6px;'
+                f'padding:3px 8px;color:#FFD700;font-size:11px;font-weight:700;">Campione: {_p["campione"]}</span>'
+                f'<span style="background:#0A1628;border:1px solid rgba(29,233,182,0.3);border-radius:6px;'
+                f'padding:3px 8px;color:#1DE9B6;font-size:11px;">3°: {_p["terzo"]}</span>'
+                f'<span style="background:#0A1628;border:1px solid rgba(240,246,252,0.15);border-radius:6px;'
+                f'padding:3px 8px;color:#F0F6FC;font-size:11px;">MVP: {_p["mvp"]}</span>'
+                f'<span style="background:#0A1628;border:1px solid rgba(240,246,252,0.15);border-radius:6px;'
+                f'padding:3px 8px;color:#F0F6FC;font-size:11px;">Capo: {_p["capo"]}</span>'
+                f'<span style="background:#0A1628;border:1px solid rgba(240,246,252,0.15);border-radius:6px;'
+                f'padding:3px 8px;color:#F0F6FC;font-size:11px;">U23: {_p["u23"]}</span>'
+                f'</div></div>',
+                unsafe_allow_html=True,
+            )
