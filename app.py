@@ -266,14 +266,14 @@ TEAM_GROUP.update({t: g for g, teams in GROUPS.items() for t in teams})
 
 # ── Thirds seeding  (official 2026 WC eligible-groups per "3?" slot) ─────────
 _SLOT_ELIGIBLE = {
-    0:  frozenset('CEFKI'),   # vs 1A  — Mexico City
-    1:  frozenset('BEHIJ'),   # vs 1L  — Atlanta
-    4:  frozenset('DEFHJ'),   # vs 1B  — Vancouver
-    5:  frozenset('AEHIL'),   # vs 1K  — Kansas City
-    8:  frozenset('BCGKL'),   # vs 1D  — San Francisco
-    9:  frozenset('AEFIJ'),   # vs 1G  — Seattle
-    14: frozenset('ABCGJ'),   # vs 1E  — Boston
-    15: frozenset('BCDFL'),   # vs 1I  — New Jersey
+    0:  frozenset('CEFHI'),   # vs 1A  — Mexico City     best3rd(C/E/F/H/I)
+    1:  frozenset('EHIJK'),   # vs 1L  — Atlanta          best3rd(E/H/I/J/K)
+    4:  frozenset('EFGIJ'),   # vs 1B  — Vancouver        best3rd(E/F/G/I/J)
+    5:  frozenset('DEIJL'),   # vs 1K  — Kansas City      best3rd(D/E/I/J/L)
+    8:  frozenset('BEFIJ'),   # vs 1D  — San Francisco    best3rd(B/E/F/I/J)
+    9:  frozenset('AEHIJ'),   # vs 1G  — Seattle          best3rd(A/E/H/I/J)
+    14: frozenset('ABCDF'),   # vs 1E  — Boston           best3rd(A/B/C/D/F)
+    15: frozenset('CDFGH'),   # vs 1I  — New Jersey       best3rd(C/D/F/G/H)
 }
 _THIRD_SLOT_ORDER = [0, 1, 4, 5, 8, 9, 14, 15]
 
