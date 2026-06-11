@@ -1699,6 +1699,16 @@ tab_g, tab_b, tab_a, tab_s = st.tabs(["📋  Gironi", "⚔️  Tabellone", "🌟
 # TAB 1 — GIRONI
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab_g:
+    if st.session_state.get("_goto_tabellone", False):
+        del st.session_state["_goto_tabellone"]
+        import streamlit.components.v1 as _cv1
+        _cv1.html("""<script>
+        setTimeout(function(){
+            var t=window.parent.document.querySelectorAll('[data-baseweb="tab"]');
+            for(var i=0;i<t.length;i++){
+                if(t[i].textContent.includes('Tabellone')){t[i].click();break;}
+            }
+        },250);</script>""", height=0)
     st.subheader("Fase a Gironi — Classifica Prevista")
     st.caption("Trascina le nazionali per riordinare la classifica del girone.")
 
@@ -1753,10 +1763,21 @@ with tab_g:
 
     cols4 = st.columns(4)
     for gi, (grp, t) in enumerate(third_teams_by_grp):
+        t1 = grp_team(grp, 0)
+        t2 = grp_team(grp, 1)
         is_sel = t in st.session_state.get("thirds", [])
         btn_type = "primary" if is_sel else "secondary"
-        label = f"{'✓ ' if is_sel else ''}{flag(t)} {t}"
+        label = f"{'✓ ' if is_sel else ''}3° {flag(t)} {t}"
         with cols4[gi % 4]:
+            st.markdown(
+                f'<div style="background:#0d1927;border-radius:8px;padding:6px 9px 5px;'
+                f'border:1px solid rgba(29,233,182,0.2);margin-bottom:4px;font-size:11px;line-height:1.65;">'
+                f'<b style="color:#1DE9B6;font-size:12px;">GRP {grp}</b><br>'
+                f'<span style="color:#FFD700;font-weight:700;">1°</span>&nbsp;{flag(t1)}&nbsp;<span style="color:#e8e8e8;">{t1}</span><br>'
+                f'<span style="color:#C0C0C0;font-weight:700;">2°</span>&nbsp;{flag(t2)}&nbsp;<span style="color:#b0b0b0;">{t2}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
             if st.button(label, key=f"third_{grp}", use_container_width=True, type=btn_type):
                 cur = list(st.session_state.get("thirds", []))
                 if t in cur:
@@ -1773,6 +1794,9 @@ with tab_g:
         st.info(f"Clicca le squadre per selezionarle — ancora {8 - n_sel} da scegliere.")
     else:
         st.success("✅ 8 migliori terze selezionate!")
+        if st.button("⚔️ Vai agli scontri diretti", type="primary", use_container_width=True):
+            st.session_state["_goto_tabellone"] = True
+            st.rerun()
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # TAB 2 — TABELLONE
