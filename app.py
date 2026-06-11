@@ -2361,7 +2361,8 @@ def generate_image(output_format: str = "jpeg") -> bytes:
 
     # ── TOP BRACKET ──────────────────────────────────────────
     slbl(96.5, '▾  SEDICESIMI  ▾', 7.5)
-    for xi, t in zip(xs8, r16_win[:8]): dpill(xi, Y_R16, t, _ps(t, NW_R8T))
+    _top_r16 = [r16_win[i] for i in [0, 1, 2, 3, 14, 15, 12, 13]]
+    for xi, t in zip(xs8, _top_r16): dpill(xi, Y_R16, t, _ps(t, NW_R8T))
     conn_down(xs8, xs4, Y_R16, Y_R8)
     slbl(85.5, '▾  OTTAVI  ▾')
     for xi, t in zip(xs4, r8_win[:4]):  dpill(xi, Y_R8,  t, _ps(t, NW_QFT))
@@ -2419,7 +2420,8 @@ def generate_image(output_format: str = "jpeg") -> bytes:
     conn_up(xs4, xs2, Y_R8_2, Y_QF2)
     for xi, t in zip(xs4, r8_win[4:]):  dpill(xi, Y_R8_2, t, _ps(t, NW_QFB))
     conn_up(xs8, xs4, Y_R16_2, Y_R8_2)
-    for xi, t in zip(xs8, r16_win[8:]): dpill(xi, Y_R16_2, t, _ps(t, NW_R8B))
+    _bot_r16 = [r16_win[i] for i in [8, 9, 10, 11, 4, 5, 6, 7]]
+    for xi, t in zip(xs8, _bot_r16): dpill(xi, Y_R16_2, t, _ps(t, NW_R8B))
 
     # ── Awards bar (più grande e visibile) ───────────────────
     ax_aw = fig.add_axes([0, 0.022, 1, 0.082])
