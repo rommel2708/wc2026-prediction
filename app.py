@@ -1522,14 +1522,14 @@ R16 = [
 ]
 
 R8 = [
-    (0, 0, 1,   "5 lug"),
-    (1, 2, 3,   "5 lug"),
-    (2, 4, 5,   "7 lug"),
-    (3, 6, 7,   "7 lug"),
-    (4, 8, 9,   "6 lug"),
-    (5, 10, 11, "6 lug"),
-    (6, 12, 13, "4 lug"),
-    (7, 14, 15, "4 lug"),
+    (0, 0,  1,  "5 lug"),   # left  top:    1A-bracket  vs 1L-bracket
+    (1, 2,  3,  "5 lug"),   # left  2nd:    1C/2F       vs 2E/2I
+    (2, 14, 15, "4 lug"),   # left  3rd:    1E-bracket  vs 1I-bracket
+    (3, 12, 13, "4 lug"),   # left  bottom: 2A/2B       vs 1F/2C
+    (4, 8,  9,  "6 lug"),   # right top:    1D-bracket  vs 1G-bracket
+    (5, 10, 11, "6 lug"),   # right 2nd:    2K/2L       vs 1H/2J
+    (6, 4,  5,  "7 lug"),   # right 3rd:    1B-bracket  vs 1K-bracket
+    (7, 6,  7,  "7 lug"),   # right bottom: 1J/2H       vs 2D/2G
 ]
 
 QF = [
@@ -1925,8 +1925,8 @@ with tab_b:
             with col:
                 mkc(f"r16_{idx}", t1, slot_team(s2), venue)
 
-    # Left R16 (0-7)
-    for i in range(8):
+    # Left R16: official bracket left half (matches 79,80,76,78,74,77,73,75)
+    for i in [0, 1, 2, 3, 14, 15, 12, 13]:
         _r16(c_r16l, i)
 
     # Left R8 (0-3)
@@ -2016,8 +2016,8 @@ with tab_b:
                 _sp(H)
         _sp(H // 2)
 
-    # Right R16 (8-15)
-    for i in range(8, 16):
+    # Right R16: official bracket right half (matches 81,82,83,84,85,87,86,88)
+    for i in [8, 9, 10, 11, 4, 5, 6, 7]:
         _r16(c_r16r, i)
 
 # TAB 3 — PREMI
